@@ -1,0 +1,250 @@
+{
+	"easycom": {
+		"autoscan": true,
+		"custom": {
+			"^uni-(.*)": "@dcloudio/uni-ui/lib/uni-$1/uni-$1.vue"
+		}
+	},
+	"pages": [
+		{
+			"path": "pages/index/index",
+			"style": {
+				"navigationBarTitleText": "心动日常",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/user/login",
+			"style": {
+				"navigationBarTitleText": "登录",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/user/register",
+			"style": {
+				"navigationBarTitleText": "注册",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/user/profile",
+			"style": {
+				"navigationBarTitleText": "个人中心"
+			}
+		},
+		{
+			"path": "pages/memory/timeline",
+			"style": {
+				"navigationBarTitleText": "时光线"
+			}
+		},
+		{
+			"path": "pages/memory/publish",
+			"style": {
+				"navigationBarTitleText": "发布时光"
+			}
+		},
+		{
+			"path": "pages/memory/detail",
+			"style": {
+				"navigationBarTitleText": "时光详情"
+			}
+		},
+		{
+			"path": "pages/memory/anniversary",
+			"style": {
+				"navigationBarTitleText": "纪念日"
+			}
+		},
+		{
+			"path": "pages/memory/anniversary-edit",
+			"style": {
+				"navigationBarTitleText": "编辑纪念日"
+			}
+		},
+		{
+			"path": "pages/memory/wish",
+			"style": {
+				"navigationBarTitleText": "心愿清单"
+			}
+		},
+		{
+			"path": "pages/memory/wish-edit",
+			"style": {
+				"navigationBarTitleText": "编辑心愿"
+			}
+		},
+		{
+			"path": "pages/memory/whisper",
+			"style": {
+				"navigationBarTitleText": "悄悄话"
+			}
+		},
+		{
+			"path": "pages/memory/whisper-send",
+			"style": {
+				"navigationBarTitleText": "发送悄悄话"
+			}
+		},
+		{
+			"path": "pages/life/period",
+			"style": {
+				"navigationBarTitleText": "生理期管理"
+			}
+		},
+		{
+			"path": "pages/life/period-edit",
+			"style": {
+				"navigationBarTitleText": "记录生理期"
+			}
+		},
+		{
+			"path": "pages/life/diet",
+			"style": {
+				"navigationBarTitleText": "饮食偏好"
+			}
+		},
+		{
+			"path": "pages/life/todo",
+			"style": {
+				"navigationBarTitleText": "待办事项"
+			}
+		},
+		{
+			"path": "pages/life/todo-edit",
+			"style": {
+				"navigationBarTitleText": "编辑待办"
+			}
+		},
+		{
+			"path": "pages/life/item",
+			"style": {
+				"navigationBarTitleText": "好物收纳"
+			}
+		},
+		{
+			"path": "pages/life/item-edit",
+			"style": {
+				"navigationBarTitleText": "编辑物品"
+			}
+		},
+		{
+			"path": "pages/interact/checkin",
+			"style": {
+				"navigationBarTitleText": "打卡"
+			}
+		},
+		{
+			"path": "pages/interact/checkin-history",
+			"style": {
+				"navigationBarTitleText": "打卡记录"
+			}
+		},
+		{
+			"path": "pages/interact/benefit",
+			"style": {
+				"navigationBarTitleText": "积分福利"
+			}
+		},
+		{
+			"path": "pages/interact/exchange-history",
+			"style": {
+				"navigationBarTitleText": "兑换记录"
+			}
+		},
+		{
+			"path": "pages/interact/emotion",
+			"style": {
+				"navigationBarTitleText": "情绪树洞"
+			}
+		},
+		{
+			"path": "pages/interact/emotion-publish",
+			"style": {
+				"navigationBarTitleText": "发布情绪"
+			}
+		},
+		{
+			"path": "pages/interact/bill",
+			"style": {
+				"navigationBarTitleText": "情侣账本"
+			}
+		},
+		{
+			"path": "pages/interact/bill-add",
+			"style": {
+				"navigationBarTitleText": "添加账单"
+			}
+		},
+		{
+			"path": "pages/interact/bill-monthly",
+			"style": {
+				"navigationBarTitleText": "月度账单"
+			}
+		},
+		{
+			"path": "pages/love/index",
+			"style": {
+				"navigationBarTitleText": "恋爱养成"
+			}
+		},
+		{
+			"path": "pages/love/achievement",
+			"style": {
+				"navigationBarTitleText": "成就"
+			}
+		},
+		{
+			"path": "pages/love/level-benefit",
+			"style": {
+				"navigationBarTitleText": "等级福利"
+			}
+		}
+	],
+	"globalStyle": {
+		"navigationBarTextStyle": "white",
+		"navigationBarTitleText": "心动日常",
+		"navigationBarBackgroundColor": "#FF6B9D",
+		"backgroundColor": "#f8f8f8"
+	},
+	"tabBar": {
+		"custom": true,
+		"color": "#999999",
+		"selectedColor": "#FF6B9D",
+		"backgroundColor": "#FFFFFF",
+		"borderStyle": "white",
+		"list": [
+			{
+				"pagePath": "pages/index/index",
+				"text": "首页",
+				"iconPath": "static/tab/home.png",
+				"selectedIconPath": "static/tab/home-active.png"
+			},
+			{
+				"pagePath": "pages/memory/timeline",
+				"text": "时光",
+				"iconPath": "static/tab/time.png",
+				"selectedIconPath": "static/tab/time-active.png"
+			},
+			{
+				"pagePath": "pages/life/todo",
+				"text": "管家",
+				"iconPath": "static/tab/life.png",
+				"selectedIconPath": "static/tab/life-active.png"
+			},
+			{
+				"pagePath": "pages/interact/checkin",
+				"text": "打卡",
+				"iconPath": "static/tab/interact.png",
+				"selectedIconPath": "static/tab/interact-active.png"
+			},
+			{
+				"pagePath": "pages/love/index",
+				"text": "养成",
+				"iconPath": "static/tab/love.png",
+				"selectedIconPath": "static/tab/love-active.png"
+			}
+		]
+	}
+}

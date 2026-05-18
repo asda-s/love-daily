@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "esnext",
+    "strict": true,
+    "jsx": "preserve",
+    "moduleResolution": "bundler",
+    "allowJs": true,
+    "sourceMap": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "lib": ["esnext", "dom"],
+    "types": ["@dcloudio/types"],
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["src/**/*.ts", "src/**/*.js", "src/**/*.vue"]
+}

@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: love-daily-api
+    runtime: docker
+    plan: free
+    envVars:
+      - key: DB_TYPE
+        value: sqlite
+      - key: SQLITE_PATH
+        value: /var/data/love_daily.db
+      - key: SECRET_KEY
+        generateValue: true
+      - key: INTERNAL_API_KEY
+        generateValue: true
+    disk:
+      name: data
+      mountPath: /var/data
+      sizeGB: 1
