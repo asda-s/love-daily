@@ -14,16 +14,27 @@
 </template>
 
 <script setup>
+import homeIcon from '@/static/tab/home.png'
+import homeActiveIcon from '@/static/tab/home-active.png'
+import timeIcon from '@/static/tab/time.png'
+import timeActiveIcon from '@/static/tab/time-active.png'
+import lifeIcon from '@/static/tab/life.png'
+import lifeActiveIcon from '@/static/tab/life-active.png'
+import interactIcon from '@/static/tab/interact.png'
+import interactActiveIcon from '@/static/tab/interact-active.png'
+import loveIcon from '@/static/tab/love.png'
+import loveActiveIcon from '@/static/tab/love-active.png'
+
 const props = defineProps({
   current: { type: Number, default: 0 }
 })
 
 const tabs = [
-  { text: '首页', icon: '/static/tab/home.png', activeIcon: '/static/tab/home-active.png', path: '/pages/index/index' },
-  { text: '时光', icon: '/static/tab/time.png', activeIcon: '/static/tab/time-active.png', path: '/pages/memory/timeline' },
-  { text: '管家', icon: '/static/tab/life.png', activeIcon: '/static/tab/life-active.png', path: '/pages/life/todo' },
-  { text: '打卡', icon: '/static/tab/interact.png', activeIcon: '/static/tab/interact-active.png', path: '/pages/interact/checkin' },
-  { text: '养成', icon: '/static/tab/love.png', activeIcon: '/static/tab/love-active.png', path: '/pages/love/index' }
+  { text: '首页', icon: homeIcon, activeIcon: homeActiveIcon, path: '/pages/index/index' },
+  { text: '时光', icon: timeIcon, activeIcon: timeActiveIcon, path: '/pages/memory/timeline' },
+  { text: '管家', icon: lifeIcon, activeIcon: lifeActiveIcon, path: '/pages/life/todo' },
+  { text: '打卡', icon: interactIcon, activeIcon: interactActiveIcon, path: '/pages/interact/checkin' },
+  { text: '养成', icon: loveIcon, activeIcon: loveActiveIcon, path: '/pages/love/index' }
 ]
 
 function switchTab(index) {

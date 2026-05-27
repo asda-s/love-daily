@@ -13,7 +13,7 @@ import uuid
 import shutil
 from app.database import get_db
 from app.security import get_current_user
-from app.models import User, Memory, Anniversary, Wish, Whisper
+from app.models import User, Memory, Anniversary, Wish, Whisper, Notification
 from app.schemas import (
     MemoryCreate, MemoryUpdate,
     AnniversaryCreate, AnniversaryUpdate,
@@ -258,11 +258,13 @@ async def upload_image(
 
     allowed_types = {"image/jpeg", "image/png", "image/gif", "image/webp"}
     if file.content_type not in allowed_types:
+        logger.warning(f"上传失败: user={current_user.id} 不支持的格式 {file.content_type} file={file.filename}")
         return error_response(400, "仅支持jpg/png/gif/webp格式图片")
 
     max_size = 5 * 1024 * 1024  # 5MB
     contents = await file.read()
     if len(contents) > max_size:
+        logger.warning(f"上传失败: user={current_user.id} 文件过大 {len(contents)}bytes file={file.filename}")
         return error_response(400, "图片大小不能超过5MB")
 
     # Magic bytes校验 - 防止伪造文件
@@ -279,13 +281,15 @@ async def upload_image(
             detected_ext = ext
             break
     if not detected_ext:
+        logger.warning(f"上传失败: user={current_user.id} magic bytes不匹配 file={file.filename} content_type={file.content_type}")
         return error_response(400, "文件内容与图片格式不符")
 
     # 用Pillow二次验证+压缩
     try:
         img = Image.open(io.BytesIO(contents))
         img.verify()  # 验证图片完整性
-    except Exception:
+    except Exception as e:
+        logger.warning(f"上传失败: user={current_user.id} 图片损坏 file={file.filename} error={e}")
         return error_response(400, "图片文件已损坏")
 
     # 重新打开（verify后需要重新open）
@@ -700,6 +704,38 @@ async def create_whisper(
     db.commit()
     db.refresh(new_whisper)
 
+    # 非定时发送时，立即给接收方创建通知
+    if not whisper_data.is_scheduled:
+        try:
+            sender_name = current_user.nickname or "TA"
+            title = "悄悄话"
+            content_preview = whisper_data.content[:50] + "..." if len(whisper_data.content) > 50 else whisper_data.content
+            notification = Notification(
+                user_id=current_user.lover_id,
+                title=title,
+                content=f"{sender_name}给你发了一条悄悄话：{content_preview}",
+                type="whisper"
+            )
+            db.add(notification)
+            db.commit()
+            # WebSocket推送
+            try:
+                from app.routers.websocket import broadcast_to_user
+                import asyncio
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    asyncio.run_coroutine_threadsafe(
+                        broadcast_to_user(current_user.lover_id, {
+                            "type": "notification",
+                            "data": {"title": title, "content": content_preview, "notification_type": "whisper"}
+                        }),
+                        loop
+                    )
+            except Exception:
+                pass
+        except Exception:
+            pass
+
     return success_response(
         data={"id": new_whisper.id},
         message="发送成功"
@@ -770,6 +806,14 @@ async def get_whisper_list(
     # 计算总数
     total = query.count()
 
+    # 计算未读数（对方发给我的未读消息）
+    unread_count = db.query(Whisper).filter(
+        Whisper.sender_id == current_user.lover_id,
+        Whisper.receiver_id == current_user.id,
+        Whisper.is_read == False,
+        Whisper.send_time.isnot(None)
+    ).count()
+
     # 分页查询
     whispers = query.order_by(Whisper.created_at.desc()).offset(
         (page - 1) * page_size
@@ -801,6 +845,7 @@ async def get_whisper_list(
         data={
             "list": whisper_list,
             "total": total,
+            "unread_count": unread_count,
             "page": page,
             "page_size": page_size
         }

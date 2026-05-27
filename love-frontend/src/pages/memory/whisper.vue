@@ -1,5 +1,9 @@
 <template>
   <view class="whisper-container">
+    <!-- 未读提示条 -->
+    <view v-if="unreadCount > 0" class="unread-banner">
+      <text class="unread-banner-text">{{ unreadCount }}条未读悄悄话</text>
+    </view>
     <!-- 发送按钮 -->
     <view class="send-btn" @click="goSend">
       <uni-icons type="compose" size="24" color="#FFFFFF"></uni-icons>
@@ -61,7 +65,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import { get, put } from '@/utils/request'
 import { useUserStore } from '@/store/user'
 
@@ -73,6 +78,7 @@ const page = ref(1)
 const pageSize = ref(20)
 const total = ref(0)
 const loading = ref(false)
+const unreadCount = ref(0)
 
 /**
  * 获取悄悄话列表
@@ -89,6 +95,7 @@ async function fetchList() {
 
     list.value = [...list.value, ...res.data.list]
     total.value = res.data.total
+    unreadCount.value = res.data.unread_count || 0
   } catch (e) {
     console.error('获取悄悄话失败', e)
   } finally {
@@ -126,7 +133,10 @@ async function markRead(item) {
   }
 }
 
-onMounted(() => {
+onShow(() => {
+  list.value = []
+  page.value = 1
+  total.value = 0
   fetchList()
 })
 </script>
@@ -151,6 +161,19 @@ onMounted(() => {
   justify-content: center;
   box-shadow: 0 4rpx 16rpx rgba(255, 107, 157, 0.4);
   z-index: 100;
+}
+
+.unread-banner {
+  background: linear-gradient(135deg, #FF6B9D, #FF8FB1);
+  padding: 16rpx 30rpx;
+  text-align: center;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.unread-banner-text {
+  color: #fff;
+  font-size: 26rpx;
 }
 
 .whisper-list {

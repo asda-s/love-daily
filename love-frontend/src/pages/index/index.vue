@@ -101,7 +101,10 @@
           <text class="module-desc">共同的愿望</text>
         </view>
         <view class="module-item" @click="go('/pages/memory/whisper')">
-          <text class="module-emoji">💌</text>
+          <view class="emoji-wrap">
+            <text class="module-emoji">💌</text>
+            <view v-if="unreadWhispers > 0" class="badge">{{ unreadWhispers > 99 ? '99+' : unreadWhispers }}</view>
+          </view>
           <text class="module-name">悄悄话</text>
           <text class="module-desc">说给TA的心里话</text>
         </view>
@@ -225,6 +228,7 @@ const myInviteCode = ref('')
 const heartPoints = ref(0)
 const loveLevel = ref(1)
 const stats = ref({})
+const unreadWhispers = ref(0)
 
 onShow(async () => {
   if (!userStore.isLoggedIn) {
@@ -245,6 +249,7 @@ onShow(async () => {
     showInviteDialog.value = false
   }
   loadLoveData()
+  loadUnreadWhispers()
 })
 
 const togetherDays = computed(() => {
@@ -271,6 +276,15 @@ async function loadLoveData() {
     }
     if (statsRes && statsRes.data) {
       stats.value = statsRes.data
+    }
+  } catch (e) {}
+}
+
+async function loadUnreadWhispers() {
+  try {
+    const res = await get('/memory/whisper', { page: 1, page_size: 1 })
+    if (res && res.data) {
+      unreadWhispers.value = res.data.unread_count || 0
     }
   } catch (e) {}
 }
@@ -430,6 +444,21 @@ function goProfile() {
     transition: all 0.2s;
     &:active { background: #FFE8F0; transform: scale(0.95); }
     .module-emoji { font-size: 48rpx; margin-bottom: 8rpx; }
+    .emoji-wrap { position: relative; margin-bottom: 8rpx; }
+    .badge {
+      position: absolute;
+      top: -8rpx;
+      right: -16rpx;
+      background: #FF4757;
+      color: #fff;
+      font-size: 18rpx;
+      min-width: 32rpx;
+      height: 32rpx;
+      line-height: 32rpx;
+      text-align: center;
+      border-radius: 16rpx;
+      padding: 0 8rpx;
+    }
     .module-name { font-size: 24rpx; color: #333; font-weight: 600; }
     .module-desc { font-size: 20rpx; color: #999; margin-top: 4rpx; }
   }

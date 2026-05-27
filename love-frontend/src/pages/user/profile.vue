@@ -3,14 +3,17 @@
     <view class="profile-header">
       <view class="header-bg"></view>
       <view class="user-card">
-        <image class="avatar" :src="userInfo.avatar || '/src/static/default-avatar.png'" mode="aspectFill" />
+        <view class="avatar-wrap" @click="changeAvatar">
+          <image class="avatar" :src="userInfo.avatar || '/static/default-avatar.png'" mode="aspectFill" />
+          <view class="avatar-edit">修改头像</view>
+        </view>
         <view class="user-meta">
           <text class="nickname">{{ userInfo.nickname || '未设置昵称' }}</text>
           <text class="username">ID: {{ userInfo.username }}</text>
         </view>
       </view>
       <view v-if="userStore.isBindLover && loverInfo" class="couple-bar">
-        <image class="couple-avatar" :src="loverInfo.avatar || '/src/static/default-avatar.png'" mode="aspectFill" />
+        <image class="couple-avatar" :src="loverInfo.avatar || '/static/default-avatar.png'" mode="aspectFill" />
         <text class="couple-name">{{ loverInfo.nickname || 'TA' }}</text>
         <text class="couple-label">已绑定</text>
       </view>
@@ -146,7 +149,7 @@
 import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { useUserStore } from '@/store/user.js'
-import { put } from '@/utils/request'
+import { put, post } from '@/utils/request'
 
 const userStore = useUserStore()
 const userInfo = ref({})
@@ -241,6 +244,48 @@ function goAchievement() { uni.navigateTo({ url: '/pages/love/achievement' }) }
 function goLevelBenefit() { uni.navigateTo({ url: '/pages/love/level-benefit' }) }
 function goLove() { uni.switchTab({ url: '/pages/love/index' }) }
 
+function changeAvatar() {
+  uni.chooseImage({
+    count: 1,
+    sizeType: ['compressed'],
+    sourceType: ['album', 'camera'],
+    success: async (res) => {
+      const filePath = res.tempFilePaths[0]
+      uni.showLoading({ title: '上传中...', mask: true })
+      try {
+        const uploadRes = await new Promise((resolve, reject) => {
+          const token = uni.getStorageSync('token')
+          uni.uploadFile({
+            url: `${import.meta.env.VITE_API_BASE_URL || ''}/memory/upload`,
+            filePath: filePath,
+            name: 'file',
+            header: { Authorization: `Bearer ${token}` },
+            success: (res) => {
+              if (res.statusCode === 200) {
+                const data = JSON.parse(res.data)
+                if (data.code === 200) resolve(data)
+                else reject(data)
+              } else {
+                reject(res)
+              }
+            },
+            fail: reject
+          })
+        })
+        const avatarUrl = uploadRes.data.url
+        await put('/user/info', { avatar: avatarUrl })
+        userInfo.value.avatar = avatarUrl
+        await userStore.getUserInfoFromServer()
+        uni.hideLoading()
+        uni.showToast({ title: '头像已更新' })
+      } catch (e) {
+        uni.hideLoading()
+        uni.showToast({ title: '上传失败，请重试', icon: 'none' })
+      }
+    }
+  })
+}
+
 function handleLogout() {
   uni.showModal({
     title: '确认退出',
@@ -281,6 +326,21 @@ function handleLogout() {
   border-radius: 50%;
   border: 6rpx solid #fff;
   background: #eee;
+}
+.avatar-wrap {
+  position: relative;
+}
+.avatar-edit {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0,0,0,0.5);
+  color: #fff;
+  font-size: 18rpx;
+  text-align: center;
+  padding: 4rpx 0;
+  border-radius: 0 0 70rpx 70rpx;
 }
 .user-meta {
   margin-left: 28rpx;

@@ -148,6 +148,7 @@ async def update_user_info(
 
     # 修改头像
     if user_data.avatar is not None:
+        logger.info(f"用户 {current_user.id} 修改头像: {user_data.avatar}")
         current_user.avatar = user_data.avatar
 
     # 修改密码
