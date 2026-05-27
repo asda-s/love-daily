@@ -14,6 +14,14 @@ services:
         generateValue: true
     healthCheckPath: /health
 
+  - type: static_site
+    name: love-daily-frontend
+    buildCommand: cd love-frontend && npm install && npm run build:h5
+    staticPublishPath: love-frontend/dist/build/h5
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://love-daily-api.onrender.com
+
 databases:
   - name: love-daily-db
     plan: free
