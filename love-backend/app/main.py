@@ -35,6 +35,16 @@ logger.add(
 
 Base.metadata.create_all(bind=engine)
 
+# 简单迁移：添加 bind_time 列（如不存在）
+try:
+    with engine.connect() as conn:
+        from sqlalchemy import text
+        conn.execute(text("ALTER TABLE users ADD COLUMN bind_time DATETIME DEFAULT NULL"))
+        conn.commit()
+        logger.info("迁移: 添加 bind_time 列")
+except Exception:
+    pass  # 列已存在，忽略
+
 # 限流器
 limiter = Limiter(key_func=get_remote_address, default_limits=["200/minute"])
 

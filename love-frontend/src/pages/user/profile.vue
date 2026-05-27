@@ -175,8 +175,9 @@ const levelProgress = computed(() => {
 })
 
 const daysTogether = computed(() => {
-  if (!userInfo.value.bind_time) return 0
-  const d = new Date(userInfo.value.bind_time)
+  const since = userInfo.value.bind_time || userInfo.value.created_at
+  if (!since) return 0
+  const d = new Date(since)
   return Math.max(0, Math.floor((Date.now() - d.getTime()) / 86400000))
 })
 
@@ -249,12 +250,16 @@ function changeAvatar() {
     count: 1,
     sizeType: ['compressed'],
     sourceType: ['album', 'camera'],
-    success: async (res) => {
-      const filePath = res.tempFilePaths[0]
+    success: async (chooseRes) => {
+      const filePath = chooseRes.tempFilePaths[0]
+      const token = uni.getStorageSync('token')
+      if (!token) {
+        uni.showToast({ title: '请先登录', icon: 'none' })
+        return
+      }
       uni.showLoading({ title: '上传中...', mask: true })
       try {
         const uploadRes = await new Promise((resolve, reject) => {
-          const token = uni.getStorageSync('token')
           uni.uploadFile({
             url: `${import.meta.env.VITE_API_BASE_URL || ''}/memory/upload`,
             filePath: filePath,
@@ -262,14 +267,27 @@ function changeAvatar() {
             header: { Authorization: `Bearer ${token}` },
             success: (res) => {
               if (res.statusCode === 200) {
-                const data = JSON.parse(res.data)
-                if (data.code === 200) resolve(data)
-                else reject(data)
+                try {
+                  const data = JSON.parse(res.data)
+                  if (data.code === 200) resolve(data)
+                  else reject(new Error(data.message || '上传失败'))
+                } catch (e) {
+                  reject(new Error('响应解析失败'))
+                }
+              } else if (res.statusCode === 401) {
+                reject(new Error('登录已过期，请重新登录'))
               } else {
-                reject(res)
+                try {
+                  const data = JSON.parse(res.data)
+                  reject(new Error(data.message || `上传失败(${res.statusCode})`))
+                } catch (e) {
+                  reject(new Error(`上传失败(${res.statusCode})`))
+                }
               }
             },
-            fail: reject
+            fail: (err) => {
+              reject(new Error(err.errMsg || '网络连接失败'))
+            }
           })
         })
         const avatarUrl = uploadRes.data.url
@@ -280,7 +298,7 @@ function changeAvatar() {
         uni.showToast({ title: '头像已更新' })
       } catch (e) {
         uni.hideLoading()
-        uni.showToast({ title: '上传失败，请重试', icon: 'none' })
+        uni.showToast({ title: e.message || '上传失败，请重试', icon: 'none' })
       }
     }
   })
@@ -344,6 +362,8 @@ function handleLogout() {
 }
 .user-meta {
   margin-left: 28rpx;
+  flex: 1;
+  min-width: 0;
 }
 .nickname {
   display: block;
@@ -351,18 +371,21 @@ function handleLogout() {
   font-weight: bold;
   color: #fff;
   margin-bottom: 8rpx;
+  text-shadow: 0 2rpx 4rpx rgba(0,0,0,0.15);
 }
 .username {
   display: block;
   font-size: 24rpx;
-  color: rgba(255,255,255,0.8);
+  color: #fff;
+  opacity: 0.9;
+  text-shadow: 0 1rpx 2rpx rgba(0,0,0,0.1);
 }
 .couple-bar {
   display: flex;
   align-items: center;
   margin: 20rpx 40rpx 0;
   padding: 16rpx 24rpx;
-  background: rgba(255,255,255,0.3);
+  background: rgba(255,255,255,0.85);
   border-radius: 40rpx;
 }
 .couple-avatar {
@@ -374,11 +397,11 @@ function handleLogout() {
 .couple-name {
   flex: 1;
   font-size: 26rpx;
-  color: #fff;
+  color: #333;
 }
 .couple-label {
   font-size: 22rpx;
-  color: rgba(255,255,255,0.8);
+  color: #666;
 }
 .stats-row {
   display: flex;

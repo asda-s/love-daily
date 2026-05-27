@@ -125,6 +125,7 @@ async def get_user_info(current_user: User = Depends(get_current_user)):
         "lover_id": current_user.lover_id,
         "heart_points": current_user.heart_points,
         "level": current_user.level,
+        "bind_time": current_user.bind_time.strftime("%Y-%m-%d %H:%M:%S") if current_user.bind_time else None,
         "created_at": current_user.created_at.strftime("%Y-%m-%d %H:%M:%S") if current_user.created_at else None
     }
     return success_response(data=user_data)
@@ -197,8 +198,12 @@ async def bind_lover(
         return error_response(400, "对方已绑定情侣")
 
     # 执行双向绑定
+    from datetime import datetime
+    bind_time = datetime.now()
     current_user.lover_id = lover.id
+    current_user.bind_time = bind_time
     lover.lover_id = current_user.id
+    lover.bind_time = bind_time
 
     db.commit()
     db.refresh(current_user)
@@ -315,7 +320,9 @@ async def unbind_lover(
     lover = db.query(User).filter(User.id == current_user.lover_id).first()
     if lover:
         lover.lover_id = None
+        lover.bind_time = None
     current_user.lover_id = None
+    current_user.bind_time = None
 
     db.commit()
     logger.info(f"用户 {current_user.id} 解绑情侣")

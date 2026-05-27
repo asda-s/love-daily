@@ -20,6 +20,7 @@ class User(Base):
     avatar = Column(String(255), default=None, comment="头像URL")
     invite_code = Column(String(6), unique=True, index=True, nullable=False, comment="邀请码")
     lover_id = Column(Integer, ForeignKey("users.id"), default=None, comment="情侣ID")
+    bind_time = Column(DateTime, default=None, comment="绑定情侣时间")
     heart_points = Column(Integer, default=0, comment="心动分")
     level = Column(Integer, default=1, comment="等级")
     created_at = Column(DateTime, default=datetime.now, comment="注册时间")

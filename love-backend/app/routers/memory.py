@@ -257,7 +257,8 @@ async def upload_image(
     import io
 
     allowed_types = {"image/jpeg", "image/png", "image/gif", "image/webp"}
-    if file.content_type not in allowed_types:
+    logger.info(f"上传请求: user={current_user.id} file={file.filename} content_type={file.content_type}")
+    if file.content_type and file.content_type not in allowed_types:
         logger.warning(f"上传失败: user={current_user.id} 不支持的格式 {file.content_type} file={file.filename}")
         return error_response(400, "仅支持jpg/png/gif/webp格式图片")
 
