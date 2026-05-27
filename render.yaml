@@ -2,6 +2,8 @@ services:
   - type: web
     name: love-daily-api
     runtime: docker
+    dockerfilePath: ./love-backend/Dockerfile
+    dockerContext: ./love-backend
     plan: free
     envVars:
       - key: DATABASE_URL
