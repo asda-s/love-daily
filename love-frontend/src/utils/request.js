@@ -10,7 +10,7 @@ import { getToken, removeToken } from './auth'
 const BASE_URL = 'https://你的域名'  // TODO: 替换为你的后端HTTPS域名
 // #endif
 // #ifndef MP-WEIXIN
-const BASE_URL = ''
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
 // #endif
 
 // 请求队列，用于控制loading显示

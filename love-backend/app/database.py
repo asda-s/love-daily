@@ -12,8 +12,13 @@ import os
 load_dotenv()
 
 DB_TYPE = os.getenv("DB_TYPE", "sqlite")
+DATABASE_URL = os.getenv("DATABASE_URL")  # Render PostgreSQL 自动注入
 
-if DB_TYPE == "mysql":
+if DATABASE_URL:
+    # Render 云端 PostgreSQL（DATABASE_URL 格式：postgres://... 需替换为 postgresql://）
+    SQLALCHEMY_DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+    engine = create_engine(SQLALCHEMY_DATABASE_URL, pool_pre_ping=True)
+elif DB_TYPE == "mysql":
     DB_HOST = os.getenv("DB_HOST", "localhost")
     DB_PORT = os.getenv("DB_PORT", "3306")
     DB_USER = os.getenv("DB_USER", "root")

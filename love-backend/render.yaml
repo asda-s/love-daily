@@ -4,15 +4,15 @@ services:
     runtime: docker
     plan: free
     envVars:
-      - key: DB_TYPE
-        value: sqlite
-      - key: SQLITE_PATH
-        value: /var/data/love_daily.db
+      - key: DATABASE_URL
+        fromDatabase:
+          name: love-daily-db
+          property: connectionString
       - key: SECRET_KEY
         generateValue: true
-      - key: INTERNAL_API_KEY
-        generateValue: true
-    disk:
-      name: data
-      mountPath: /var/data
-      sizeGB: 1
+    healthCheckPath: /health
+
+databases:
+  - name: love-daily-db
+    plan: free
+    databaseName: love_daily
