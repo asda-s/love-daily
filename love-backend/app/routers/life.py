@@ -8,21 +8,32 @@ from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_
 from datetime import datetime, date, timedelta
 from typing import Optional, List
+import json
+import asyncio
 from app.database import get_db
 from app.security import get_current_user
-from app.models import User, Period, DietPreference, Todo, Item
+from app.models import (
+    User, Period, DietPreference, Todo,
+    MoodDiary, MoodDiaryReaction, MoodDiaryReply, MoodDiaryDraft,
+    Notification
+)
 from app.schemas import (
     PeriodCreate, PeriodUpdate,
     DietPreferenceCreate,
     TodoCreate, TodoUpdate,
-    ItemCreate, ItemUpdate
+    MoodDiaryCreate, MoodDiaryUpdate,
+    MoodDiaryReactionCreate, MoodDiaryReplyCreate,
+    MoodDiaryDraftSave
 )
 from app.response import success_response, error_response
+from app.routers.websocket import broadcast_to_user
 
 
 from app.utils import try_achieve
 
 router = APIRouter()
+
+REACTION_EMOJI = {"hug": "\U0001f917", "kiss": "\U0001f618", "like": "\U0001f44d", "cheer": "\U0001f4aa", "pat": "\U0001f970", "heart": "\U0001faf0"}
 
 
 # ==================== 生理期管理接口 ====================
@@ -562,231 +573,622 @@ async def get_todo_list(
     return success_response(data=todo_list)
 
 
-# ==================== 好物收纳接口 ====================
+# ==================== 心情日记接口 ====================
 
-@router.post("/item")
-async def create_item(
-    item_data: ItemCreate,
+@router.post("/diary")
+async def create_diary(
+    data: MoodDiaryCreate,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
-    创建好物记录
-    - 仅本人可创建
+    创建心情日记
+    - 最多9张图片，最多3个标签
     """
-    new_item = Item(
+    images_json = json.dumps(data.images) if data.images else None
+    tags_json = json.dumps(data.tags) if data.tags else None
+    diary = MoodDiary(
         user_id=current_user.id,
-        name=item_data.name,
-        brand=item_data.brand,
-        model=item_data.model,
-        spec=item_data.spec,
-        expiry_date=item_data.expiry_date,
-        purchase_date=item_data.purchase_date,
-        open_date=item_data.open_date,
-        remind_days=item_data.remind_days,
-        category=item_data.category,
-        note=item_data.note
+        mood_type=data.mood_type,
+        mood_intensity=data.mood_intensity,
+        second_mood=data.second_mood,
+        content=data.content,
+        images=images_json,
+        tags=tags_json,
+        publish_status=data.publish_status,
+        scheduled_time=data.scheduled_time
     )
-
-    db.add(new_item)
+    db.add(diary)
     db.commit()
-    db.refresh(new_item)
+    db.refresh(diary)
 
-    return success_response(
-        data={"id": new_item.id},
-        message="添加成功"
-    )
+    # 检查日记成就
+    if data.publish_status == "published":
+        try:
+            from app.routers.love import check_diary_achievements
+            check_diary_achievements(current_user.id, db)
+        except Exception:
+            pass
+
+    # If published immediately and has lover, create notification
+    if data.publish_status == "published" and current_user.lover_id:
+        notification = Notification(
+            user_id=current_user.lover_id,
+            title="心情日记",
+            content=f"{current_user.nickname or 'TA'}发布了一篇心情日记",
+            type="diary"
+        )
+        db.add(notification)
+        db.commit()
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                asyncio.run_coroutine_threadsafe(
+                    broadcast_to_user(
+                        current_user.lover_id,
+                        {
+                            "type": "notification",
+                            "data": {
+                                "title": "心情日记",
+                                "content": f"{current_user.nickname or 'TA'}发布了一篇心情日记",
+                                "notification_type": "diary"
+                            }
+                        }
+                    ),
+                    loop
+                )
+        except:
+            pass
+
+    return success_response(data={"id": diary.id}, message="发布成功")
 
 
-@router.put("/item/{item_id}")
-async def update_item(
-    item_id: int,
-    item_data: ItemUpdate,
+@router.put("/diary/draft")
+async def save_draft(
+    data: MoodDiaryDraftSave,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
-    编辑好物记录
+    保存心情日记草稿
+    """
+    draft = db.query(MoodDiaryDraft).filter(MoodDiaryDraft.user_id == current_user.id).first()
+    if draft:
+        draft.content = data.content
+    else:
+        draft = MoodDiaryDraft(user_id=current_user.id, content=data.content)
+        db.add(draft)
+    db.commit()
+    return success_response(message="草稿已保存")
+
+
+@router.get("/diary/draft")
+async def get_draft(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    获取心情日记草稿
+    """
+    draft = db.query(MoodDiaryDraft).filter(MoodDiaryDraft.user_id == current_user.id).first()
+    if not draft:
+        return success_response(data=None)
+    return success_response(data={
+        "content": draft.content,
+        "updated_at": draft.updated_at.strftime("%Y-%m-%d %H:%M:%S") if draft.updated_at else None
+    })
+
+
+@router.get("/diary/search")
+async def search_diaries(
+    keyword: str = Query(..., min_length=1),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    搜索心情日记
+    - 按内容关键字搜索
+    """
+    query = db.query(MoodDiary).filter(MoodDiary.publish_status == "published", MoodDiary.content.contains(keyword))
+    if current_user.lover_id:
+        query = query.filter(or_(MoodDiary.user_id == current_user.id, MoodDiary.user_id == current_user.lover_id))
+    else:
+        query = query.filter(MoodDiary.user_id == current_user.id)
+
+    diaries = query.order_by(MoodDiary.created_at.desc()).limit(50).all()
+    user_ids = list(set(d.user_id for d in diaries))
+    users_map = {u.id: u for u in db.query(User).filter(User.id.in_(user_ids)).all()} if user_ids else {}
+
+    result = [
+        {
+            "id": d.id,
+            "user_id": d.user_id,
+            "nickname": (users_map.get(d.user_id).nickname if users_map.get(d.user_id) else ""),
+            "mood_type": d.mood_type,
+            "content": d.content[:100],
+            "created_at": d.created_at.strftime("%Y-%m-%d %H:%M:%S")
+        }
+        for d in diaries
+    ]
+    return success_response(data=result)
+
+
+@router.get("/diary/calendar")
+async def mood_calendar(
+    year: int = Query(...),
+    month: int = Query(..., ge=1, le=12),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    心情日历
+    - 返回指定月份每天的心情记录
+    """
+    from datetime import date as date_type
+    start = date_type(year, month, 1)
+    if month == 12:
+        end = date_type(year + 1, 1, 1)
+    else:
+        end = date_type(year, month + 1, 1)
+
+    query = db.query(MoodDiary).filter(
+        MoodDiary.publish_status == "published",
+        MoodDiary.created_at >= start,
+        MoodDiary.created_at < end
+    )
+    if current_user.lover_id:
+        query = query.filter(or_(MoodDiary.user_id == current_user.id, MoodDiary.user_id == current_user.lover_id))
+    else:
+        query = query.filter(MoodDiary.user_id == current_user.id)
+
+    diaries = query.all()
+    calendar = {}
+    for d in diaries:
+        day = d.created_at.day
+        if day not in calendar:
+            calendar[day] = []
+        calendar[day].append({
+            "user_id": d.user_id,
+            "mood_type": d.mood_type,
+            "mood_intensity": d.mood_intensity,
+            "diary_id": d.id
+        })
+
+    return success_response(data={"year": year, "month": month, "calendar": calendar})
+
+
+@router.get("/diary/report")
+async def emotion_report(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    每周情绪报告
+    """
+    from datetime import timedelta
+    today = date.today()
+    week_start = today - timedelta(days=today.weekday())
+    week_end = week_start + timedelta(days=7)
+
+    query = db.query(MoodDiary).filter(
+        MoodDiary.publish_status == "published",
+        MoodDiary.created_at >= week_start,
+        MoodDiary.created_at < week_end
+    )
+    if current_user.lover_id:
+        query = query.filter(or_(MoodDiary.user_id == current_user.id, MoodDiary.user_id == current_user.lover_id))
+    else:
+        query = query.filter(MoodDiary.user_id == current_user.id)
+
+    diaries = query.all()
+    my_diaries = [d for d in diaries if d.user_id == current_user.id]
+    lover_diaries = [d for d in diaries if d.user_id != current_user.id] if current_user.lover_id else []
+
+    # Mood distribution
+    mood_names = {
+        "happy": "开心", "sweet": "甜蜜", "calm": "平静", "tired": "疲惫",
+        "sad": "难过", "angry": "生气", "wronged": "委屈", "surprised": "惊喜"
+    }
+    my_mood_dist = {}
+    for d in my_diaries:
+        name = mood_names.get(d.mood_type, d.mood_type)
+        my_mood_dist[name] = my_mood_dist.get(name, 0) + 1
+    lover_mood_dist = {}
+    for d in lover_diaries:
+        name = mood_names.get(d.mood_type, d.mood_type)
+        lover_mood_dist[name] = lover_mood_dist.get(name, 0) + 1
+
+    # Daily trend
+    daily_moods = {}
+    for d in diaries:
+        day_key = d.created_at.strftime("%m-%d")
+        if day_key not in daily_moods:
+            daily_moods[day_key] = []
+        daily_moods[day_key].append({
+            "user_id": d.user_id,
+            "mood": d.mood_type,
+            "intensity": d.mood_intensity
+        })
+
+    return success_response(data={
+        "week_start": week_start.strftime("%Y-%m-%d"),
+        "week_end": week_end.strftime("%Y-%m-%d"),
+        "my_count": len(my_diaries),
+        "lover_count": len(lover_diaries),
+        "my_mood_distribution": my_mood_dist,
+        "lover_mood_distribution": lover_mood_dist,
+        "daily_trend": daily_moods
+    })
+
+
+@router.get("/diary/{diary_id}")
+async def get_diary_detail(
+    diary_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    获取心情日记详情
+    - 自动标记已读
+    """
+    diary = db.query(MoodDiary).filter(MoodDiary.id == diary_id).first()
+    if not diary:
+        return error_response(404, "日记不存在")
+
+    # Check permission
+    if current_user.lover_id:
+        if diary.user_id != current_user.id and diary.user_id != current_user.lover_id:
+            return error_response(403, "无权查看")
+    elif diary.user_id != current_user.id:
+        return error_response(403, "无权查看")
+
+    # Mark as read if viewer is the partner
+    if diary.user_id != current_user.id and not diary.is_read:
+        diary.is_read = True
+        diary.read_time = datetime.now()
+        db.commit()
+
+    user = db.query(User).filter(User.id == diary.user_id).first()
+    reactions = db.query(MoodDiaryReaction).filter(MoodDiaryReaction.diary_id == diary_id).all()
+    reaction_users = {u.id: u for u in db.query(User).filter(User.id.in_(list(set(r.user_id for r in reactions)))).all()} if reactions else {}
+    reaction_list = [
+        {
+            "type": r.reaction_type,
+            "emoji": REACTION_EMOJI.get(r.reaction_type, ""),
+            "user_id": r.user_id,
+            "nickname": (reaction_users.get(r.user_id).nickname if reaction_users.get(r.user_id) else "")
+        }
+        for r in reactions
+    ]
+
+    # My reaction
+    my_reaction = db.query(MoodDiaryReaction).filter(
+        MoodDiaryReaction.diary_id == diary_id,
+        MoodDiaryReaction.user_id == current_user.id
+    ).first()
+
+    return success_response(data={
+        "id": diary.id,
+        "user_id": diary.user_id,
+        "nickname": user.nickname if user else "",
+        "avatar": user.avatar if user else None,
+        "mood_type": diary.mood_type,
+        "mood_intensity": diary.mood_intensity,
+        "second_mood": diary.second_mood,
+        "content": diary.content,
+        "images": json.loads(diary.images) if diary.images else [],
+        "tags": json.loads(diary.tags) if diary.tags else [],
+        "is_read": diary.is_read,
+        "read_time": diary.read_time.strftime("%Y-%m-%d %H:%M:%S") if diary.read_time else None,
+        "reactions": reaction_list,
+        "my_reaction": my_reaction.reaction_type if my_reaction else None,
+        "created_at": diary.created_at.strftime("%Y-%m-%d %H:%M:%S") if diary.created_at else None
+    })
+
+
+@router.put("/diary/{diary_id}")
+async def update_diary(
+    diary_id: int,
+    data: MoodDiaryUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    编辑心情日记
     - 仅本人可编辑
     """
-    item = db.query(Item).filter(Item.id == item_id).first()
-    if not item:
-        return error_response(404, "物品不存在")
+    diary = db.query(MoodDiary).filter(MoodDiary.id == diary_id).first()
+    if not diary:
+        return error_response(404, "日记不存在")
+    if diary.user_id != current_user.id:
+        return error_response(403, "无权编辑")
 
-    # 权限校验：仅本人可编辑
-    if item.user_id != current_user.id:
-        return error_response(403, "无权限编辑")
-
-    # 更新字段
-    if item_data.name is not None:
-        item.name = item_data.name
-    if item_data.brand is not None:
-        item.brand = item_data.brand
-    if item_data.model is not None:
-        item.model = item_data.model
-    if item_data.spec is not None:
-        item.spec = item_data.spec
-    if item_data.expiry_date is not None:
-        item.expiry_date = item_data.expiry_date
-    if item_data.purchase_date is not None:
-        item.purchase_date = item_data.purchase_date
-    if item_data.open_date is not None:
-        item.open_date = item_data.open_date
-    if item_data.remind_days is not None:
-        item.remind_days = item_data.remind_days
-    if item_data.category is not None:
-        item.category = item_data.category
-    if item_data.note is not None:
-        item.note = item_data.note
+    for field in ['mood_type', 'mood_intensity', 'second_mood', 'content']:
+        val = getattr(data, field)
+        if val is not None:
+            setattr(diary, field, val)
+    if data.images is not None:
+        diary.images = json.dumps(data.images)
+    if data.tags is not None:
+        diary.tags = json.dumps(data.tags)
 
     db.commit()
-    db.refresh(item)
-
     return success_response(message="编辑成功")
 
 
-@router.delete("/item/{item_id}")
-async def delete_item(
-    item_id: int,
+@router.delete("/diary/{diary_id}")
+async def delete_diary(
+    diary_id: int,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
-    删除好物记录
+    删除心情日记
     - 仅本人可删除
     """
-    item = db.query(Item).filter(Item.id == item_id).first()
-    if not item:
-        return error_response(404, "物品不存在")
+    diary = db.query(MoodDiary).filter(MoodDiary.id == diary_id).first()
+    if not diary:
+        return error_response(404, "日记不存在")
+    if diary.user_id != current_user.id:
+        return error_response(403, "无权删除")
 
-    # 权限校验：仅本人可删除
-    if item.user_id != current_user.id:
-        return error_response(403, "无权限删除")
-
-    db.delete(item)
+    # Delete reactions and replies first
+    db.query(MoodDiaryReaction).filter(MoodDiaryReaction.diary_id == diary_id).delete()
+    db.query(MoodDiaryReply).filter(MoodDiaryReply.diary_id == diary_id).delete()
+    db.delete(diary)
     db.commit()
-
     return success_response(message="删除成功")
 
 
-@router.get("/item")
-async def get_item_list(
-    category: Optional[str] = None,
+@router.get("/diary")
+async def list_diaries(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1, le=50),
+    mood_type: Optional[str] = None,
+    tag: Optional[str] = None,
+    user_id: Optional[int] = None,
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
-    获取好物列表
-    - 返回本人和情侣的好物
-    - 支持按分类筛选
+    获取心情日记列表（分页，支持筛选）
+    - 返回本人和情侣的已发布日记
     """
-    # 查询本人和情侣的好物
-    query = db.query(Item)
+    query = db.query(MoodDiary).filter(MoodDiary.publish_status == "published")
     if current_user.lover_id:
-        query = query.filter(
-            or_(
-                Item.user_id == current_user.id,
-                Item.user_id == current_user.lover_id
-            )
-        )
+        query = query.filter(or_(MoodDiary.user_id == current_user.id, MoodDiary.user_id == current_user.lover_id))
     else:
-        query = query.filter(Item.user_id == current_user.id)
+        query = query.filter(MoodDiary.user_id == current_user.id)
 
-    # 分类筛选
-    if category:
-        query = query.filter(Item.category == category)
+    if mood_type:
+        query = query.filter(MoodDiary.mood_type == mood_type)
+    if user_id:
+        query = query.filter(MoodDiary.user_id == user_id)
+    if start_date:
+        query = query.filter(MoodDiary.created_at >= start_date)
+    if end_date:
+        query = query.filter(MoodDiary.created_at <= end_date)
 
-    items = query.order_by(Item.created_at.desc()).all()
+    total = query.count()
+    diaries = query.order_by(MoodDiary.created_at.desc()).offset((page - 1) * page_size).limit(page_size).all()
 
-    # 批量查询用户信息
-    user_ids = list(set(i.user_id for i in items))
+    user_ids = list(set(d.user_id for d in diaries))
     users_map = {u.id: u for u in db.query(User).filter(User.id.in_(user_ids)).all()} if user_ids else {}
 
-    # 构建返回数据
-    today = date.today()
-    item_list = []
-    for item in items:
-        user = users_map.get(item.user_id)
+    # Get reactions for these diaries
+    diary_ids = [d.id for d in diaries]
+    reactions = db.query(MoodDiaryReaction).filter(MoodDiaryReaction.diary_id.in_(diary_ids)).all() if diary_ids else []
+    reaction_users = {u.id: u for u in db.query(User).filter(User.id.in_(list(set(r.user_id for r in reactions)))).all()} if reactions else {}
 
-        # 计算临期天数
-        days_to_expiry = None
-        is_expiring = False
-        if item.expiry_date:
-            days_to_expiry = (item.expiry_date - today).days
-            is_expiring = 0 <= days_to_expiry <= item.remind_days
+    result = []
+    for d in diaries:
+        user = users_map.get(d.user_id)
+        diary_reactions = [r for r in reactions if r.diary_id == d.id]
+        reaction_list = [
+            {
+                "type": r.reaction_type,
+                "emoji": REACTION_EMOJI.get(r.reaction_type, ""),
+                "user_id": r.user_id,
+                "nickname": (reaction_users.get(r.user_id).nickname if reaction_users.get(r.user_id) else "")
+            }
+            for r in diary_reactions
+        ]
 
-        item_list.append({
-            "id": item.id,
-            "user_id": item.user_id,
+        # Tag filter
+        if tag:
+            tags = json.loads(d.tags) if d.tags else []
+            if tag not in tags:
+                continue
+
+        result.append({
+            "id": d.id,
+            "user_id": d.user_id,
             "nickname": user.nickname if user else "",
-            "name": item.name,
-            "brand": item.brand,
-            "model": item.model,
-            "spec": item.spec,
-            "expiry_date": item.expiry_date.strftime("%Y-%m-%d") if item.expiry_date else None,
-            "purchase_date": item.purchase_date.strftime("%Y-%m-%d") if item.purchase_date else None,
-            "open_date": item.open_date.strftime("%Y-%m-%d") if item.open_date else None,
-            "remind_days": item.remind_days,
-            "category": item.category,
-            "note": item.note,
-            "days_to_expiry": days_to_expiry,
-            "is_expiring": is_expiring,
-            "created_at": item.created_at.strftime("%Y-%m-%d %H:%M:%S") if item.created_at else None
+            "avatar": user.avatar if user else None,
+            "mood_type": d.mood_type,
+            "mood_intensity": d.mood_intensity,
+            "second_mood": d.second_mood,
+            "content": d.content,
+            "images": json.loads(d.images) if d.images else [],
+            "tags": json.loads(d.tags) if d.tags else [],
+            "is_read": d.is_read,
+            "reactions": reaction_list,
+            "reply_count": db.query(MoodDiaryReply).filter(MoodDiaryReply.diary_id == d.id).count(),
+            "created_at": d.created_at.strftime("%Y-%m-%d %H:%M:%S") if d.created_at else None
         })
 
-    # 按临期状态排序，临期物品置顶
-    item_list.sort(key=lambda x: (not x["is_expiring"], x["days_to_expiry"] if x["days_to_expiry"] is not None else 999))
-
-    return success_response(data=item_list)
+    return success_response(data={"list": result, "total": total, "page": page, "page_size": page_size})
 
 
-@router.get("/item/expiring")
-async def get_expiring_items(
+@router.post("/diary/{diary_id}/reaction")
+async def add_reaction(
+    diary_id: int,
+    data: MoodDiaryReactionCreate,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
-    获取临期物品列表
-    - 返回即将过期的物品
+    添加日记反应
     """
-    today = date.today()
+    diary = db.query(MoodDiary).filter(MoodDiary.id == diary_id).first()
+    if not diary:
+        return error_response(404, "日记不存在")
 
-    # 查询本人和情侣的好物
-    query = db.query(Item).filter(Item.expiry_date.isnot(None))
-    if current_user.lover_id:
-        query = query.filter(
-            or_(
-                Item.user_id == current_user.id,
-                Item.user_id == current_user.lover_id
-            )
-        )
+    valid_types = ["hug", "kiss", "like", "cheer", "pat", "heart"]
+    if data.reaction_type not in valid_types:
+        return error_response(400, "无效的反应类型")
+
+    existing = db.query(MoodDiaryReaction).filter(
+        MoodDiaryReaction.diary_id == diary_id,
+        MoodDiaryReaction.user_id == current_user.id
+    ).first()
+
+    if existing:
+        existing.reaction_type = data.reaction_type
     else:
-        query = query.filter(Item.user_id == current_user.id)
+        reaction = MoodDiaryReaction(
+            diary_id=diary_id,
+            user_id=current_user.id,
+            reaction_type=data.reaction_type
+        )
+        db.add(reaction)
 
-    items = query.all()
+    db.commit()
 
-    # 批量查询用户信息
-    user_ids = list(set(i.user_id for i in items))
+    # Notify diary author
+    if diary.user_id != current_user.id:
+        emoji = REACTION_EMOJI.get(data.reaction_type, "")
+        notification = Notification(
+            user_id=diary.user_id,
+            title="日记反应",
+            content=f"{current_user.nickname or 'TA'}对你的日记{emoji}了",
+            type="diary_reaction"
+        )
+        db.add(notification)
+        db.commit()
+
+    return success_response(message="已发送")
+
+
+@router.delete("/diary/{diary_id}/reaction")
+async def remove_reaction(
+    diary_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    撤回日记反应
+    """
+    reaction = db.query(MoodDiaryReaction).filter(
+        MoodDiaryReaction.diary_id == diary_id,
+        MoodDiaryReaction.user_id == current_user.id
+    ).first()
+    if not reaction:
+        return error_response(404, "未找到反应")
+
+    db.delete(reaction)
+    db.commit()
+    return success_response(message="已撤回")
+
+
+@router.post("/diary/{diary_id}/reply")
+async def add_reply(
+    diary_id: int,
+    data: MoodDiaryReplyCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    添加日记回复
+    """
+    diary = db.query(MoodDiary).filter(MoodDiary.id == diary_id).first()
+    if not diary:
+        return error_response(404, "日记不存在")
+
+    if data.parent_id:
+        parent = db.query(MoodDiaryReply).filter(
+            MoodDiaryReply.id == data.parent_id,
+            MoodDiaryReply.diary_id == diary_id
+        ).first()
+        if not parent:
+            return error_response(404, "父回复不存在")
+
+    reply = MoodDiaryReply(
+        diary_id=diary_id,
+        user_id=current_user.id,
+        parent_id=data.parent_id,
+        content=data.content
+    )
+    db.add(reply)
+    db.commit()
+    db.refresh(reply)
+
+    # Notify diary author
+    if diary.user_id != current_user.id:
+        notification = Notification(
+            user_id=diary.user_id,
+            title="日记回复",
+            content=f"{current_user.nickname or 'TA'}回复了你的日记",
+            type="diary_reply"
+        )
+        db.add(notification)
+        db.commit()
+
+    return success_response(data={"id": reply.id}, message="回复成功")
+
+
+@router.get("/diary/{diary_id}/replies")
+async def list_replies(
+    diary_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    获取日记回复列表
+    """
+    replies = db.query(MoodDiaryReply).filter(
+        MoodDiaryReply.diary_id == diary_id
+    ).order_by(MoodDiaryReply.created_at.asc()).all()
+
+    user_ids = list(set(r.user_id for r in replies))
     users_map = {u.id: u for u in db.query(User).filter(User.id.in_(user_ids)).all()} if user_ids else {}
 
-    # 筛选临期物品
-    expiring_items = []
-    for item in items:
-        days_to_expiry = (item.expiry_date - today).days
-        if 0 <= days_to_expiry <= item.remind_days:
-            user = users_map.get(item.user_id)
-            expiring_items.append({
-                "id": item.id,
-                "user_id": item.user_id,
-                "nickname": user.nickname if user else "",
-                "name": item.name,
-                "brand": item.brand,
-                "expiry_date": item.expiry_date.strftime("%Y-%m-%d"),
-                "days_to_expiry": days_to_expiry,
-                "category": item.category
-            })
+    result = []
+    for r in replies:
+        user = users_map.get(r.user_id)
+        result.append({
+            "id": r.id,
+            "user_id": r.user_id,
+            "nickname": user.nickname if user else "",
+            "avatar": user.avatar if user else None,
+            "content": r.content,
+            "parent_id": r.parent_id,
+            "created_at": r.created_at.strftime("%Y-%m-%d %H:%M:%S") if r.created_at else None
+        })
 
-    # 按临期天数排序
-    expiring_items.sort(key=lambda x: x["days_to_expiry"])
+    return success_response(data=result)
 
-    return success_response(data=expiring_items)
+
+@router.delete("/diary/reply/{reply_id}")
+async def delete_reply(
+    reply_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    删除日记回复
+    - 仅本人可删除
+    """
+    reply = db.query(MoodDiaryReply).filter(MoodDiaryReply.id == reply_id).first()
+    if not reply:
+        return error_response(404, "回复不存在")
+    if reply.user_id != current_user.id:
+        return error_response(403, "无权删除")
+
+    # Delete children first
+    db.query(MoodDiaryReply).filter(MoodDiaryReply.parent_id == reply_id).delete()
+    db.delete(reply)
+    db.commit()
+    return success_response(message="删除成功")

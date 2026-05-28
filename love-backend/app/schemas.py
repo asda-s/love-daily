@@ -179,32 +179,42 @@ class TodoUpdate(BaseModel):
     status: Optional[str] = Field(None, description="状态")
 
 
-class ItemCreate(BaseModel):
-    """好物收纳创建入参"""
-    name: str = Field(..., min_length=1, max_length=100, description="物品名称")
-    brand: Optional[str] = Field(None, description="品牌")
-    model: Optional[str] = Field(None, description="型号")
-    spec: Optional[str] = Field(None, description="规格")
-    expiry_date: Optional[date] = Field(None, description="保质期")
-    purchase_date: Optional[date] = Field(None, description="购买时间")
-    open_date: Optional[date] = Field(None, description="开封时间")
-    remind_days: int = Field(30, ge=1, le=365, description="临期提醒天数")
-    category: str = Field("other", description="分类")
-    note: Optional[str] = Field(None, description="备注")
+class MoodDiaryCreate(BaseModel):
+    """心情日记创建入参"""
+    mood_type: str = Field(..., description="心情类型")
+    mood_intensity: int = Field(3, ge=1, le=5, description="心情强度1-5")
+    second_mood: Optional[str] = Field(None, description="混合心情第二类型")
+    content: str = Field(..., min_length=1, max_length=5000, description="日记内容")
+    images: Optional[List[str]] = Field(None, description="图片URL列表，最多9张")
+    tags: Optional[List[str]] = Field(None, description="标签列表，最多3个")
+    publish_status: str = Field("published", description="发布状态: draft/published/scheduled")
+    scheduled_time: Optional[datetime] = Field(None, description="定时发布时间")
 
 
-class ItemUpdate(BaseModel):
-    """好物收纳更新入参"""
-    name: Optional[str] = Field(None, min_length=1, max_length=100, description="物品名称")
-    brand: Optional[str] = Field(None, description="品牌")
-    model: Optional[str] = Field(None, description="型号")
-    spec: Optional[str] = Field(None, description="规格")
-    expiry_date: Optional[date] = Field(None, description="保质期")
-    purchase_date: Optional[date] = Field(None, description="购买时间")
-    open_date: Optional[date] = Field(None, description="开封时间")
-    remind_days: Optional[int] = Field(None, ge=1, le=365, description="临期提醒天数")
-    category: Optional[str] = Field(None, description="分类")
-    note: Optional[str] = Field(None, description="备注")
+class MoodDiaryUpdate(BaseModel):
+    """心情日记更新入参"""
+    mood_type: Optional[str] = Field(None, description="心情类型")
+    mood_intensity: Optional[int] = Field(None, ge=1, le=5, description="心情强度1-5")
+    second_mood: Optional[str] = Field(None, description="混合心情第二类型")
+    content: Optional[str] = Field(None, min_length=1, max_length=5000, description="日记内容")
+    images: Optional[List[str]] = Field(None, description="图片URL列表，最多9张")
+    tags: Optional[List[str]] = Field(None, description="标签列表，最多3个")
+
+
+class MoodDiaryReactionCreate(BaseModel):
+    """日记快速反应入参"""
+    reaction_type: str = Field(..., description="反应类型: hug/kiss/like/cheer/pat/heart")
+
+
+class MoodDiaryReplyCreate(BaseModel):
+    """日记回复入参"""
+    content: str = Field(..., min_length=1, max_length=1000, description="回复内容")
+    parent_id: Optional[int] = Field(None, description="父回复ID，楼中楼")
+
+
+class MoodDiaryDraftSave(BaseModel):
+    """日记草稿保存入参"""
+    content: str = Field(..., description="草稿内容JSON")
 
 
 # ==================== 双人互动模块 ====================

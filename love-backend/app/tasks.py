@@ -1,6 +1,6 @@
 """
 定时任务模块
-负责纪念日提醒、生理期提醒、临期物品提醒等定时任务
+负责纪念日提醒、生理期提醒、日记定时发布、心情周报等定时任务
 使用APScheduler实现，时区固定为东八区
 """
 
@@ -8,8 +8,9 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from datetime import datetime, date, timedelta
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from app.database import SessionLocal
-from app.models import Anniversary, Period, Item, Todo, Whisper, User, Notification
+from app.models import Anniversary, Period, Todo, Whisper, User, Notification, MoodDiary
 import pytz
 import asyncio
 import logging
@@ -130,32 +131,74 @@ def check_periods():
         db.close()
 
 
-def check_expiring_items():
+def publish_scheduled_diaries():
+    """发布定时日记"""
+    db = SessionLocal()
+    try:
+        now = datetime.now(CHINA_TZ).replace(tzinfo=None)
+        diaries = db.query(MoodDiary).filter(
+            MoodDiary.publish_status == "scheduled",
+            MoodDiary.scheduled_time.isnot(None),
+            MoodDiary.scheduled_time <= now
+        ).all()
+
+        for diary in diaries:
+            diary.publish_status = "published"
+            user = db.query(User).filter(User.id == diary.user_id).first()
+            if user and user.lover_id:
+                title = "新日记提醒"
+                content = f"TA发布了一篇心情日记，快去看看吧"
+                _create_notification(db, user.lover_id, title, content, "diary")
+
+        db.commit()
+        if diaries:
+            logger.info(f"定时日记发布完成，共{len(diaries)}篇")
+    except Exception as e:
+        logger.error(f"定时日记发布失败: {e}")
+        db.rollback()
+    finally:
+        db.close()
+
+
+def generate_weekly_emotion_report():
+    """生成心情周报"""
     db = SessionLocal()
     try:
         today = date.today()
-        items = db.query(Item).filter(Item.expiry_date.isnot(None)).all()
+        week_start = today - timedelta(days=today.weekday())
+        week_end = week_start + timedelta(days=6)
 
-        for item in items:
-            days_left = (item.expiry_date - today).days
+        users = db.query(User).filter(User.lover_id.isnot(None)).all()
+        for user in users:
+            diaries = db.query(MoodDiary).filter(
+                MoodDiary.user_id == user.id,
+                MoodDiary.publish_status == "published",
+                func.date(MoodDiary.created_at) >= week_start,
+                func.date(MoodDiary.created_at) <= week_end
+            ).all()
 
-            if 0 <= days_left <= item.remind_days:
-                user = db.query(User).filter(User.id == item.user_id).first()
-                if user:
-                    title = "物品临期提醒"
-                    if days_left == 0:
-                        content = f"「{item.name}」今天到期"
-                    else:
-                        content = f"「{item.name}」还有{days_left}天到期"
-                    _create_notification(db, user.id, title, content, "item")
+            if not diaries:
+                continue
 
-                    if user.lover_id:
-                        _create_notification(db, user.lover_id, title, content, "item")
+            mood_counts = {}
+            for d in diaries:
+                mood_counts[d.mood_type] = mood_counts.get(d.mood_type, 0) + 1
+
+            MOOD_NAMES = {
+                "happy": "开心", "sweet": "甜蜜", "calm": "平静", "tired": "疲惫",
+                "sad": "难过", "angry": "生气", "wronged": "委屈", "surprised": "惊喜"
+            }
+            top_mood = max(mood_counts, key=mood_counts.get)
+            top_mood_name = MOOD_NAMES.get(top_mood, top_mood)
+
+            title = "心情周报"
+            content = f"本周共写了{len(diaries)}篇日记，最常见的心情是「{top_mood_name}」"
+            _create_notification(db, user.id, title, content, "diary")
 
         db.commit()
-        logger.info("临期物品提醒检查完成")
+        logger.info("心情周报生成完成")
     except Exception as e:
-        logger.error(f"临期物品提醒检查失败: {e}")
+        logger.error(f"心情周报生成失败: {e}")
         db.rollback()
     finally:
         db.close()
@@ -253,9 +296,16 @@ def init_scheduler():
     )
 
     scheduler.add_job(
-        check_expiring_items,
-        CronTrigger(hour=8, minute=0, timezone=CHINA_TZ),
-        id="item_expiry_check",
+        publish_scheduled_diaries,
+        CronTrigger(minute="*/5", timezone=CHINA_TZ),
+        id="diary_scheduled_publish",
+        replace_existing=True
+    )
+
+    scheduler.add_job(
+        generate_weekly_emotion_report,
+        CronTrigger(hour=20, minute=0, day_of_week="sun", timezone=CHINA_TZ),
+        id="weekly_emotion_report",
         replace_existing=True
     )
 

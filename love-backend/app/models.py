@@ -3,7 +3,7 @@
 定义所有数据库表结构，使用SQLAlchemy ORM
 """
 
-from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, Float, ForeignKey, Date
+from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, Float, ForeignKey, Date, UniqueConstraint
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.database import Base
@@ -161,27 +161,70 @@ class Todo(Base):
     user = relationship("User", backref="todos")
 
 
-class Item(Base):
-    """好物收纳表"""
-    __tablename__ = "items"
+class MoodDiary(Base):
+    """心情日记表"""
+    __tablename__ = "mood_diaries"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True, comment="用户ID")
-    name = Column(String(100), nullable=False, comment="物品名称")
-    brand = Column(String(50), default=None, comment="品牌")
-    model = Column(String(50), default=None, comment="型号")
-    spec = Column(String(50), default=None, comment="规格")
-    expiry_date = Column(Date, default=None, comment="保质期")
-    purchase_date = Column(Date, default=None, comment="购买时间")
-    open_date = Column(Date, default=None, comment="开封时间")
-    remind_days = Column(Integer, default=30, comment="临期提醒天数")
-    category = Column(String(20), default="other", comment="分类: cosmetics-化妆品, skincare-护肤品, clothing-服饰, other-其他")
-    note = Column(Text, default=None, comment="备注")
+    mood_type = Column(String(20), nullable=False, comment="心情类型: happy/sweet/calm/tired/sad/angry/wronged/surprised")
+    mood_intensity = Column(Integer, default=3, comment="心情强度1-5")
+    second_mood = Column(String(20), default=None, comment="混合心情第二类型")
+    content = Column(Text, nullable=False, comment="日记内容")
+    images = Column(Text, default=None, comment="图片JSON数组")
+    tags = Column(Text, default=None, comment="标签JSON数组,最多3个")
+    is_read = Column(Boolean, default=False, comment="对方是否已读")
+    read_time = Column(DateTime, default=None, comment="对方阅读时间")
+    publish_status = Column(String(20), default="published", comment="发布状态: draft/published/scheduled")
+    scheduled_time = Column(DateTime, default=None, comment="定时发布时间")
     created_at = Column(DateTime, default=datetime.now, comment="创建时间")
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now, comment="更新时间")
 
-    # 关系定义
-    user = relationship("User", backref="items")
+    user = relationship("User", backref="mood_diaries")
+
+
+class MoodDiaryReaction(Base):
+    """日记快速反应表"""
+    __tablename__ = "mood_diary_reactions"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    diary_id = Column(Integer, ForeignKey("mood_diaries.id"), nullable=False, index=True, comment="日记ID")
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, comment="用户ID")
+    reaction_type = Column(String(20), nullable=False, comment="反应类型: hug/kiss/like/cheer/pat/heart")
+    created_at = Column(DateTime, default=datetime.now, comment="创建时间")
+
+    user = relationship("User", backref="diary_reactions")
+    diary = relationship("MoodDiary", backref="reactions")
+
+    __table_args__ = (UniqueConstraint('diary_id', 'user_id', name='uq_diary_user_reaction'),)
+
+
+class MoodDiaryReply(Base):
+    """日记回复表（楼中楼）"""
+    __tablename__ = "mood_diary_replies"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    diary_id = Column(Integer, ForeignKey("mood_diaries.id"), nullable=False, index=True, comment="日记ID")
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, comment="用户ID")
+    parent_id = Column(Integer, ForeignKey("mood_diary_replies.id"), default=None, comment="父回复ID")
+    content = Column(Text, nullable=False, comment="回复内容")
+    created_at = Column(DateTime, default=datetime.now, comment="创建时间")
+
+    user = relationship("User", backref="diary_replies")
+    diary = relationship("MoodDiary", backref="replies")
+    parent = relationship("MoodDiaryReply", remote_side=[id], backref="children")
+
+
+class MoodDiaryDraft(Base):
+    """日记草稿表（每人一条）"""
+    __tablename__ = "mood_diary_drafts"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, unique=True, comment="用户ID")
+    content = Column(Text, default=None, comment="草稿内容JSON")
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now, comment="更新时间")
+
+    user = relationship("User", backref="diary_draft")
 
 
 class CheckinProject(Base):

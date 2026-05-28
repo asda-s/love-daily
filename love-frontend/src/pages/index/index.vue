@@ -134,9 +134,9 @@
           <text class="module-desc">待办不遗漏</text>
         </view>
         <view class="module-item" @click="go('/pages/life/item')">
-          <text class="module-emoji">📦</text>
-          <text class="module-name">好物收纳</text>
-          <text class="module-desc">共享物品</text>
+          <text class="module-emoji">📔</text>
+          <text class="module-name">心情日记</text>
+          <text class="module-desc">记录心情</text>
         </view>
       </view>
     </view>

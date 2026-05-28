@@ -1,266 +1,879 @@
 <template>
-  <view class="item-page">
-    <view class="search-bar">
-      <input class="search-input" v-model="keyword" placeholder="搜索物品" @confirm="loadItems" />
-      <picker :range="categoryOptions" :value="categoryIndex" @change="onCategoryChange">
-        <view class="category-picker">{{ categoryOptions[categoryIndex] }}</view>
-      </picker>
+  <view class="diary-page">
+    <!-- Header -->
+    <view class="header">
+      <view class="header-title">心情日记</view>
+      <view class="header-actions">
+        <view class="header-icon" @click="goCalendar">
+          <text class="icon-text">📅</text>
+        </view>
+        <view class="header-icon" @click="goReport">
+          <text class="icon-text">📊</text>
+        </view>
+      </view>
     </view>
 
+    <!-- Mood Filter -->
+    <scroll-view scroll-x class="mood-filter" :show-scrollbar="false">
+      <view class="mood-filter-inner">
+        <view
+          class="mood-item"
+          :class="{ active: selectedMood === '' }"
+          @click="selectMood('')"
+        >
+          <view class="mood-emoji-wrap" :style="selectedMood === '' ? 'background: #FF69B4' : ''">
+            <text class="mood-emoji">🌟</text>
+          </view>
+          <text class="mood-name" :style="selectedMood === '' ? 'color: #FF69B4' : ''">全部</text>
+        </view>
+        <view
+          v-for="(cfg, key) in MOOD_CONFIG"
+          :key="key"
+          class="mood-item"
+          :class="{ active: selectedMood === key }"
+          @click="selectMood(key)"
+        >
+          <view
+            class="mood-emoji-wrap"
+            :style="selectedMood === key ? `background: ${cfg.color}` : `background: ${cfg.bg}`"
+          >
+            <text class="mood-emoji">{{ cfg.emoji }}</text>
+          </view>
+          <text class="mood-name" :style="selectedMood === key ? `color: ${cfg.color}` : ''">{{ cfg.name }}</text>
+        </view>
+      </view>
+    </scroll-view>
+
+    <!-- Publisher Filter -->
+    <view class="publisher-filter">
+      <view
+        v-for="p in publisherOptions"
+        :key="p.value"
+        class="publisher-pill"
+        :class="{ active: selectedPublisher === p.value }"
+        @click="selectPublisher(p.value)"
+      >
+        <text>{{ p.label }}</text>
+      </view>
+    </view>
+
+    <!-- Diary List -->
     <scroll-view
       scroll-y
-      class="scroll-area"
+      class="diary-list"
       refresher-enabled
       :refresher-triggered="refreshing"
       @refresherrefresh="onRefresh"
+      @scrolltolower="loadMore"
     >
-    <view class="expiring-section" v-if="expiringItems.length">
-      <view class="section-title">⚠️ 即将过期</view>
-      <view class="item-card expiring" v-for="item in expiringItems" :key="item.id" @click="goEdit(item.id)">
-        <view class="item-info">
-          <view class="item-name">{{ item.name }}</view>
-          <view class="item-detail">
-            <text class="category-tag">{{ item.category }}</text>
-            <text v-if="item.location">📍{{ item.location }}</text>
-          </view>
-          <view class="item-expiry" v-if="item.expiry_date">
-            到期：{{ item.expiry_date }}
-          </view>
-        </view>
-      </view>
-    </view>
+      <view v-if="diaryList.length > 0" class="diary-cards">
+        <view
+          v-for="item in diaryList"
+          :key="item.id"
+          class="diary-card"
+          @click="goDetail(item.id)"
+          @longpress="onLongPress(item)"
+        >
+          <!-- Unread dot -->
+          <view v-if="!item.is_read" class="unread-dot"></view>
 
-    <view class="item-list">
-      <view class="section-title">全部物品</view>
-      <view class="item-card" v-for="item in filteredItems" :key="item.id">
-        <view class="item-info" @click="goEdit(item.id)">
-          <view class="item-name">{{ item.name }}</view>
-          <view class="item-detail">
-            <text class="category-tag">{{ item.category }}</text>
-            <text class="quantity">x{{ item.quantity }}</text>
-            <text v-if="item.location">📍{{ item.location }}</text>
+          <view class="card-body">
+            <!-- Left: mood emoji -->
+            <view
+              class="card-mood"
+              :style="{ background: getMoodBg(item.mood_type) }"
+            >
+              <text class="card-mood-emoji">{{ getMoodEmoji(item.mood_type) }}</text>
+            </view>
+
+            <!-- Right: content -->
+            <view class="card-content">
+              <!-- User row -->
+              <view class="card-user-row">
+                <image
+                  class="card-avatar"
+                  :src="item.user?.avatar || '/static/default-avatar.png'"
+                  mode="aspectFill"
+                />
+                <text class="card-nickname">{{ item.user?.nickname || '匿名' }}</text>
+                <view
+                  v-if="item.mood_intensity"
+                  class="mood-intensity"
+                  :style="{ color: getMoodColor(item.mood_type) }"
+                >
+                  {{ getMoodName(item.mood_type) }} × {{ item.mood_intensity }}
+                </view>
+              </view>
+
+              <!-- Content preview -->
+              <view class="card-text-wrap">
+                <text class="card-text">{{ item.content }}</text>
+              </view>
+
+              <!-- Image thumbnail -->
+              <view v-if="getImageUrl(item)" class="card-image-wrap">
+                <image
+                  class="card-image"
+                  :src="getImageUrl(item)"
+                  mode="aspectFill"
+                />
+              </view>
+
+              <!-- Tags -->
+              <view v-if="getTags(item).length" class="card-tags">
+                <view v-for="(tag, idx) in getTags(item)" :key="idx" class="tag-chip">
+                  <text class="tag-text">#{{ tag }}</text>
+                </view>
+              </view>
+
+              <!-- Bottom row: time + reactions -->
+              <view class="card-bottom">
+                <text class="card-time">{{ formatRelativeTime(item.created_at) }}</text>
+                <view class="reaction-bar" @click.stop>
+                  <!-- Existing reactions -->
+                  <view
+                    v-for="(r, idx) in getExistingReactions(item)"
+                    :key="idx"
+                    class="reaction-chip"
+                    :class="{ 'my-reaction': r.isMine }"
+                    @click.stop="toggleReaction(item, r.type)"
+                  >
+                    <text class="reaction-chip-emoji">{{ r.emoji }}</text>
+                    <text class="reaction-chip-count">{{ r.count }}</text>
+                  </view>
+                  <!-- Add reaction button -->
+                  <view class="reaction-add" @click.stop="showReactionPicker(item)">
+                    <text class="reaction-add-text">+</text>
+                  </view>
+                </view>
+              </view>
+            </view>
           </view>
         </view>
-        <view class="delete-btn" @click.stop="deleteItem(item)">删除</view>
       </view>
-      <view class="empty" v-if="!filteredItems.length">
-        <text class="empty-icon">📦</text>
-        <text class="empty-text">还没有物品</text>
-        <text class="empty-hint">点击右下角"+"添加你们的共享物品</text>
+
+      <!-- Loading more -->
+      <view v-if="loading && page > 1" class="loading-more">
+        <text class="loading-text">加载中...</text>
       </view>
-    </view>
+
+      <!-- No more -->
+      <view v-if="noMore && diaryList.length > 0" class="no-more">
+        <text class="no-more-text">—— 没有更多了 ——</text>
+      </view>
+
+      <!-- Empty state -->
+      <view v-if="!loading && diaryList.length === 0" class="empty-state">
+        <text class="empty-emoji">😢</text>
+        <text class="empty-text">还没有日记，写一篇吧</text>
+      </view>
     </scroll-view>
 
-    <view class="fab" @click="goAdd">+</view>
+    <!-- Reaction popup -->
+    <view v-if="reactionPickerVisible" class="reaction-mask" @click="reactionPickerVisible = false">
+      <view class="reaction-popup" @click.stop>
+        <view class="reaction-popup-title">选择一个互动</view>
+        <view class="reaction-options">
+          <view
+            v-for="(cfg, key) in REACTION_CONFIG"
+            :key="key"
+            class="reaction-option"
+            @click="addReaction(key)"
+          >
+            <text class="reaction-option-emoji">{{ cfg.emoji }}</text>
+            <text class="reaction-option-name">{{ cfg.name }}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- FAB -->
+    <view class="fab" @click="goCreate">
+      <text class="fab-icon">✏️</text>
+    </view>
   </view>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { get, del } from '@/utils/request'
+import { ref, onMounted } from 'vue'
+import { get, post, del } from '@/utils/request'
+import { useUserStore } from '@/store/user'
 
-const items = ref([])
+const userStore = useUserStore()
+
+const MOOD_CONFIG = {
+  happy:     { emoji: '😊', name: '开心', color: '#FFD700', bg: '#FFF8DC' },
+  sweet:     { emoji: '🥰', name: '甜蜜', color: '#FF69B4', bg: '#FFE4EC' },
+  calm:      { emoji: '😌', name: '平静', color: '#87CEEB', bg: '#E0F0FF' },
+  tired:     { emoji: '😮‍💨', name: '疲惫', color: '#808080', bg: '#F0F0F0' },
+  sad:       { emoji: '😢', name: '难过', color: '#4169E1', bg: '#E8EDFF' },
+  angry:     { emoji: '😠', name: '生气', color: '#FF4500', bg: '#FFE8E0' },
+  wronged:   { emoji: '🥺', name: '委屈', color: '#9370DB', bg: '#F0E8FF' },
+  surprised: { emoji: '🤩', name: '惊喜', color: '#FFA500', bg: '#FFF0E0' }
+}
+
+const REACTION_CONFIG = {
+  hug:    { emoji: '🤗', name: '抱抱' },
+  kiss:   { emoji: '😘', name: '亲亲' },
+  like:   { emoji: '👍', name: '点赞' },
+  cheer:  { emoji: '💪', name: '加油' },
+  pat:    { emoji: '🥰', name: '摸摸头' },
+  heart:  { emoji: '🫰', name: '比心' }
+}
+
+const publisherOptions = [
+  { label: '全部', value: 'all' },
+  { label: '我', value: 'me' },
+  { label: 'TA', value: 'lover' }
+]
+
+const diaryList = ref([])
+const selectedMood = ref('')
+const selectedPublisher = ref('all')
 const refreshing = ref(false)
-const keyword = ref('')
-const categoryOptions = ['全部', '食品', '日用品', '药品', '其他']
-const categoryIndex = ref(0)
+const loading = ref(false)
+const page = ref(1)
+const pageSize = 20
+const total = ref(0)
+const noMore = ref(false)
+
+const reactionPickerVisible = ref(false)
+const reactionTargetItem = ref(null)
 
 onMounted(() => {
-  loadItems()
+  loadDiaryList(true)
 })
 
-const loadItems = async () => {
+function selectMood(mood) {
+  selectedMood.value = mood
+  loadDiaryList(true)
+}
+
+function selectPublisher(pub) {
+  selectedPublisher.value = pub
+  loadDiaryList(true)
+}
+
+async function loadDiaryList(reset = false) {
+  if (loading.value) return
+  if (reset) {
+    page.value = 1
+    noMore.value = false
+    diaryList.value = []
+  }
+  if (noMore.value) return
+
+  loading.value = true
   try {
-    const params = {}
-    if (keyword.value) params.keyword = keyword.value
-    const res = await get('/life/item', params)
+    const params = {
+      page: page.value,
+      page_size: pageSize
+    }
+    if (selectedMood.value) {
+      params.mood_type = selectedMood.value
+    }
+    if (selectedPublisher.value !== 'all') {
+      params.publisher = selectedPublisher.value
+    }
+    const res = await get('/life/diary', params, { useLoading: false })
     if (res && res.data) {
-      items.value = res.data
+      const items = res.data.items || []
+      total.value = res.data.total || 0
+      if (reset) {
+        diaryList.value = items
+      } else {
+        diaryList.value = [...diaryList.value, ...items]
+      }
+      if (diaryList.value.length >= total.value || items.length < pageSize) {
+        noMore.value = true
+      } else {
+        page.value++
+      }
     }
   } catch (e) {
-    console.error('加载物品失败', e)
+    console.error('加载日记失败', e)
+  } finally {
+    loading.value = false
   }
-}
-
-const onCategoryChange = (e) => {
-  categoryIndex.value = e.detail.value
-}
-
-const filteredItems = computed(() => {
-  let list = items.value
-  if (categoryIndex.value > 0) {
-    list = list.filter(i => i.category === categoryOptions[categoryIndex.value])
-  }
-  return list
-})
-
-const expiringItems = computed(() => {
-  const now = new Date()
-  const weekLater = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
-  return items.value.filter(i => {
-    if (!i.expiry_date) return false
-    const d = new Date(i.expiry_date)
-    return d <= weekLater && d >= now
-  })
-})
-
-const goEdit = (id) => {
-  uni.navigateTo({ url: `/pages/life/item-edit?id=${id}` })
-}
-
-const goAdd = () => {
-  uni.navigateTo({ url: '/pages/life/item-edit' })
 }
 
 async function onRefresh() {
   refreshing.value = true
-  await loadItems()
+  await loadDiaryList(true)
   refreshing.value = false
 }
 
-function deleteItem(item) {
-  uni.showModal({
-    title: '确认删除',
-    content: '确定删除该物品？',
-    confirmColor: '#e43d33',
+function loadMore() {
+  if (!noMore.value && !loading.value) {
+    loadDiaryList(false)
+  }
+}
+
+function getMoodEmoji(moodType) {
+  return MOOD_CONFIG[moodType]?.emoji || '😊'
+}
+
+function getMoodBg(moodType) {
+  return MOOD_CONFIG[moodType]?.bg || '#FFF8DC'
+}
+
+function getMoodColor(moodType) {
+  return MOOD_CONFIG[moodType]?.color || '#FFD700'
+}
+
+function getMoodName(moodType) {
+  return MOOD_CONFIG[moodType]?.name || '未知'
+}
+
+function getImageUrl(item) {
+  if (!item.images) return ''
+  try {
+    const arr = typeof item.images === 'string' ? JSON.parse(item.images) : item.images
+    return arr.length > 0 ? arr[0] : ''
+  } catch {
+    return ''
+  }
+}
+
+function getTags(item) {
+  if (!item.tags) return []
+  try {
+    return typeof item.tags === 'string' ? JSON.parse(item.tags) : item.tags
+  } catch {
+    return []
+  }
+}
+
+function getExistingReactions(item) {
+  if (!item.reactions) return []
+  const result = []
+  const currentUserId = userStore.userInfo?.id
+  for (const [type, data] of Object.entries(item.reactions)) {
+    if (!REACTION_CONFIG[type]) continue
+    const count = typeof data === 'object' ? (data.count || 0) : 0
+    const users = typeof data === 'object' ? (data.users || []) : []
+    if (count > 0) {
+      result.push({
+        type,
+        emoji: REACTION_CONFIG[type].emoji,
+        count,
+        isMine: users.includes(currentUserId)
+      })
+    }
+  }
+  return result
+}
+
+function showReactionPicker(item) {
+  reactionTargetItem.value = item
+  reactionPickerVisible.value = true
+}
+
+async function addReaction(reactionType) {
+  reactionPickerVisible.value = false
+  if (!reactionTargetItem.value) return
+  try {
+    await post(`/life/diary/${reactionTargetItem.value.id}/reaction`, {
+      reaction_type: reactionType
+    }, { useLoading: false })
+    await loadDiaryList(true)
+  } catch (e) {
+    console.error('添加互动失败', e)
+  }
+}
+
+async function toggleReaction(item, reactionType) {
+  const currentUserId = userStore.userInfo?.id
+  const data = item.reactions?.[reactionType]
+  const users = typeof data === 'object' ? (data.users || []) : []
+  const isMine = users.includes(currentUserId)
+
+  try {
+    if (isMine) {
+      await del(`/life/diary/${item.id}/reaction`, {
+        reaction_type: reactionType
+      }, { useLoading: false })
+    } else {
+      await post(`/life/diary/${item.id}/reaction`, {
+        reaction_type: reactionType
+      }, { useLoading: false })
+    }
+    await loadDiaryList(true)
+  } catch (e) {
+    console.error('操作互动失败', e)
+  }
+}
+
+function formatRelativeTime(dateStr) {
+  if (!dateStr) return ''
+  const now = Date.now()
+  const date = new Date(dateStr)
+  const ts = date.getTime()
+  const diff = now - ts
+  if (diff < 0) return '刚刚'
+  const minutes = Math.floor(diff / 60000)
+  if (minutes < 1) return '刚刚'
+  if (minutes < 60) return `${minutes}分钟前`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours}小时前`
+  const days = Math.floor(hours / 24)
+  if (days < 30) return `${days}天前`
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
+function onLongPress(item) {
+  const currentUserId = userStore.userInfo?.id
+  const isOwner = item.user_id === currentUserId
+  const actions = []
+  if (isOwner) {
+    actions.push('删除')
+  }
+  actions.push('取消')
+  uni.showActionSheet({
+    itemList: actions,
     success: async (res) => {
-      if (res.confirm) {
-        try {
-          await del('/life/item/' + item.id)
-          await loadItems()
-        } catch (e) {}
+      if (isOwner && res.tapIndex === 0) {
+        uni.showModal({
+          title: '确认删除',
+          content: '确定删除这篇日记吗？',
+          confirmColor: '#FF69B4',
+          success: (modalRes) => {
+            if (modalRes.confirm) {
+              deleteDiary(item.id)
+            }
+          }
+        })
       }
     }
   })
 }
+
+async function deleteDiary(id) {
+  try {
+    await del(`/life/diary/${id}`)
+    uni.showToast({ title: '已删除', icon: 'success' })
+    await loadDiaryList(true)
+  } catch (e) {
+    console.error('删除日记失败', e)
+  }
+}
+
+function goDetail(id) {
+  uni.navigateTo({ url: `/pages/life/mood-diary-detail?id=${id}` })
+}
+
+function goCalendar() {
+  uni.navigateTo({ url: '/pages/life/mood-calendar' })
+}
+
+function goReport() {
+  uni.navigateTo({ url: '/pages/life/mood-report' })
+}
+
+function goCreate() {
+  uni.navigateTo({ url: '/pages/life/item-edit' })
+}
 </script>
 
 <style scoped>
-.item-page {
+.diary-page {
   background: #FFF5F9;
   min-height: 100vh;
-  padding-bottom: 120rpx;
+  display: flex;
+  flex-direction: column;
 }
-.search-bar {
+
+/* Header */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 30rpx;
+  background: #fff;
+}
+
+.header-title {
+  font-size: 38rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.header-icon {
+  width: 64rpx;
+  height: 64rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #FFF5F9;
+  border-radius: 50%;
+}
+
+.icon-text {
+  font-size: 32rpx;
+}
+
+/* Mood filter */
+.mood-filter {
+  background: #fff;
+  padding: 16rpx 0;
+  white-space: nowrap;
+}
+
+.mood-filter-inner {
+  display: inline-flex;
+  padding: 0 20rpx;
+  gap: 16rpx;
+}
+
+.mood-item {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6rpx;
+  min-width: 90rpx;
+}
+
+.mood-emoji-wrap {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.mood-emoji {
+  font-size: 36rpx;
+}
+
+.mood-name {
+  font-size: 22rpx;
+  color: #999;
+}
+
+/* Publisher filter */
+.publisher-filter {
   display: flex;
   align-items: center;
   gap: 16rpx;
-  padding: 20rpx;
+  padding: 12rpx 30rpx 16rpx;
   background: #fff;
 }
-.search-input {
-  flex: 1;
-  background: #FFF5F9;
-  padding: 16rpx 24rpx;
-  border-radius: 30rpx;
-  font-size: 28rpx;
+
+.publisher-pill {
+  padding: 8rpx 28rpx;
+  border-radius: 28rpx;
+  font-size: 24rpx;
+  color: #999;
+  background: #F5F5F5;
 }
-.category-picker {
-  background: #FFF5F9;
-  padding: 16rpx 24rpx;
-  border-radius: 30rpx;
-  font-size: 26rpx;
+
+.publisher-pill.active {
+  background: #FFE4EC;
+  color: #FF69B4;
+}
+
+/* Diary list */
+.diary-list {
+  flex: 1;
+  height: 0;
+}
+
+.diary-cards {
+  padding: 20rpx;
+}
+
+/* Diary card */
+.diary-card {
+  position: relative;
+  background: #fff;
+  border-radius: 24rpx;
+  padding: 28rpx;
+  margin-bottom: 24rpx;
+  box-shadow: 0 4rpx 16rpx rgba(255, 105, 180, 0.08);
+}
+
+.unread-dot {
+  position: absolute;
+  top: 16rpx;
+  right: 16rpx;
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: 50%;
+  background: #FF69B4;
+}
+
+.card-body {
+  display: flex;
+  gap: 24rpx;
+}
+
+/* Left mood circle */
+.card-mood {
+  width: 96rpx;
+  height: 96rpx;
+  min-width: 96rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card-mood-emoji {
+  font-size: 48rpx;
+}
+
+/* Right content */
+.card-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.card-user-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 12rpx;
+}
+
+.card-avatar {
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 50%;
+  background: #f0f0f0;
+}
+
+.card-nickname {
+  font-size: 24rpx;
   color: #666;
 }
-.section-title {
+
+.mood-intensity {
+  font-size: 22rpx;
+  margin-left: auto;
+}
+
+.card-text-wrap {
+  margin-bottom: 12rpx;
+}
+
+.card-text {
   font-size: 28rpx;
-  font-weight: bold;
-  padding: 20rpx 20rpx 10rpx;
+  color: #333;
+  line-height: 1.6;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.expiring-section {
-  margin-bottom: 20rpx;
+
+.card-image-wrap {
+  margin-bottom: 12rpx;
 }
-.item-list {
-  padding: 0 20rpx;
+
+.card-image {
+  width: 200rpx;
+  height: 150rpx;
+  border-radius: 12rpx;
+  background: #f5f5f5;
 }
-.item-card {
-  background: #fff;
-  border-radius: 16rpx;
-  padding: 24rpx;
-  margin-bottom: 16rpx;
+
+/* Tags */
+.card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10rpx;
+  margin-bottom: 12rpx;
+}
+
+.tag-chip {
+  background: #FFF0F5;
+  padding: 4rpx 16rpx;
+  border-radius: 20rpx;
+}
+
+.tag-text {
+  font-size: 22rpx;
+  color: #FF69B4;
+}
+
+/* Bottom row */
+.card-bottom {
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
-.item-info {
-  flex: 1;
-  min-width: 0;
+
+.card-time {
+  font-size: 22rpx;
+  color: #bbb;
 }
-.delete-btn {
-  font-size: 24rpx;
-  color: #ff4d4f;
-  padding: 8rpx 20rpx;
-  border: 1rpx solid #ff4d4f;
-  border-radius: 20rpx;
-  margin-left: 16rpx;
-}
-.scroll-area {
-  height: calc(100vh - 120rpx);
-}
-.item-card.expiring {
-  margin: 0 20rpx 16rpx;
-  border-left: 6rpx solid #ff4d4f;
-}
-.item-name {
-  font-size: 30rpx;
-  font-weight: bold;
-  margin-bottom: 10rpx;
-}
-.item-detail {
+
+/* Reaction bar */
+.reaction-bar {
   display: flex;
   align-items: center;
-  gap: 16rpx;
-  font-size: 24rpx;
-  color: #666;
+  gap: 10rpx;
 }
-.category-tag {
-  background: #f0f0f0;
+
+.reaction-chip {
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
   padding: 4rpx 12rpx;
-  border-radius: 10rpx;
-  font-size: 22rpx;
+  border-radius: 20rpx;
+  background: #F5F5F5;
 }
-.quantity {
-  color: #FF69B4;
+
+.reaction-chip.my-reaction {
+  background: #FFE4EC;
 }
-.item-expiry {
+
+.reaction-chip-emoji {
   font-size: 24rpx;
-  color: #ff4d4f;
-  margin-top: 8rpx;
 }
-.empty {
-  text-align: center;
-  padding: 80rpx 40rpx;
+
+.reaction-chip-count {
+  font-size: 20rpx;
   color: #999;
 }
-.empty-icon {
-  font-size: 80rpx;
-  display: block;
-  margin-bottom: 20rpx;
+
+.reaction-add {
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 50%;
+  background: #F5F5F5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-.empty-text {
+
+.reaction-add-text {
+  font-size: 24rpx;
+  color: #999;
+}
+
+/* Reaction popup */
+.reaction-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.reaction-popup {
+  background: #fff;
+  border-radius: 24rpx;
+  padding: 40rpx;
+  width: 580rpx;
+}
+
+.reaction-popup-title {
   font-size: 30rpx;
-  color: #666;
-  display: block;
-  margin-bottom: 12rpx;
+  font-weight: bold;
+  color: #333;
+  text-align: center;
+  margin-bottom: 32rpx;
 }
-.empty-hint {
+
+.reaction-options {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 32rpx;
+}
+
+.reaction-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+  width: 120rpx;
+}
+
+.reaction-option-emoji {
+  font-size: 56rpx;
+}
+
+.reaction-option-name {
+  font-size: 22rpx;
+  color: #666;
+}
+
+/* Loading / No more */
+.loading-more {
+  text-align: center;
+  padding: 24rpx;
+}
+
+.loading-text {
   font-size: 24rpx;
   color: #bbb;
-  display: block;
 }
+
+.no-more {
+  text-align: center;
+  padding: 24rpx;
+}
+
+.no-more-text {
+  font-size: 24rpx;
+  color: #ccc;
+}
+
+/* Empty state */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 160rpx 40rpx;
+}
+
+.empty-emoji {
+  font-size: 96rpx;
+  margin-bottom: 24rpx;
+}
+
+.empty-text {
+  font-size: 30rpx;
+  color: #999;
+}
+
+/* FAB */
 .fab {
   position: fixed;
   right: 40rpx;
   bottom: 140rpx;
   width: 100rpx;
   height: 100rpx;
-  background: #FF69B4;
+  background: linear-gradient(135deg, #FF69B4, #FF8EC7);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 48rpx;
-  color: #fff;
-  box-shadow: 0 4rpx 16rpx rgba(255, 107, 157, 0.4);
+  box-shadow: 0 8rpx 24rpx rgba(255, 105, 180, 0.4);
+  z-index: 100;
+}
+
+.fab-icon {
+  font-size: 44rpx;
 }
 </style>

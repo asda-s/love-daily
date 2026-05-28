@@ -120,13 +120,25 @@
 		{
 			"path": "pages/life/item",
 			"style": {
-				"navigationBarTitleText": "好物收纳"
+				"navigationBarTitleText": "心情日记"
 			}
 		},
 		{
 			"path": "pages/life/item-edit",
 			"style": {
-				"navigationBarTitleText": "编辑物品"
+				"navigationBarTitleText": "写日记"
+			}
+		},
+		{
+			"path": "pages/life/diary-detail",
+			"style": {
+				"navigationBarTitleText": "日记详情"
+			}
+		},
+		{
+			"path": "pages/life/mood-calendar",
+			"style": {
+				"navigationBarTitleText": "心情日历"
 			}
 		},
 		{

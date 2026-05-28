@@ -34,6 +34,9 @@ ACHIEVEMENT_DEFINITIONS = [
     {"name": "生理期小太阳", "description": "连续3个周期提前完成暖心准备", "condition": "连续3个周期有生理期记录", "reward_points": 50},
     {"name": "30天早安约定", "description": "连续30天完成早安打卡", "condition": "连续打卡30天", "reward_points": 50},
     {"name": "旅行最佳搭子", "description": "完成第一次双人旅行心愿", "condition": "完成一个couple类型心愿", "reward_points": 80},
+    {"name": "日记达人", "description": "累计写下30篇心情日记", "condition": "发布30篇日记", "reward_points": 50},
+    {"name": "心情收藏家", "description": "体验过全部8种心情类型", "condition": "使用8种不同心情发日记", "reward_points": 80},
+    {"name": "灵魂共鸣", "description": "与伴侣同一天都写了日记", "condition": "同一天双方各发一篇日记", "reward_points": 30},
 ]
 
 
@@ -255,7 +258,7 @@ async def love_stats(
 ):
     """恋爱数据统计面板"""
     from datetime import date, timedelta
-    from app.models import Memory, Anniversary, Wish, CheckinRecord, Bill, Emotion
+    from app.models import Memory, Anniversary, Wish, CheckinRecord, Bill, Emotion, MoodDiary
 
     today = date.today()
 
@@ -298,6 +301,12 @@ async def love_stats(
         Emotion.user_id == current_user.id
     ).count()
 
+    # 日记数量
+    diary_count = db.query(MoodDiary).filter(
+        MoodDiary.user_id == current_user.id,
+        MoodDiary.publish_status == "published"
+    ).count()
+
     return success_response({
         "days_together": days_together,
         "heart_points": current_user.heart_points,
@@ -307,5 +316,47 @@ async def love_stats(
         "wish_completed": wish_completed,
         "month_checkins": checkin_count,
         "month_expense": round(month_expense, 2),
-        "emotion_count": emotion_count
+        "emotion_count": emotion_count,
+        "diary_count": diary_count
     })
+
+
+def check_diary_achievements(user_id: int, db: Session):
+    """检查日记相关成就"""
+    from app.models import MoodDiary
+    from sqlalchemy import func
+
+    # 日记达人：累计30篇
+    diary_count = db.query(MoodDiary).filter(
+        MoodDiary.user_id == user_id,
+        MoodDiary.publish_status == "published"
+    ).count()
+    if diary_count >= 30:
+        try_unlock_achievement(user_id, "日记达人", db)
+
+    # 心情收藏家：使用过8种心情
+    mood_types = db.query(func.distinct(MoodDiary.mood_type)).filter(
+        MoodDiary.user_id == user_id,
+        MoodDiary.publish_status == "published"
+    ).all()
+    if len(mood_types) >= 8:
+        try_unlock_achievement(user_id, "心情收藏家", db)
+
+    # 灵魂共鸣：同一天双方都写了日记
+    user = db.query(User).filter(User.id == user_id).first()
+    if user and user.lover_id:
+        from sqlalchemy import cast, Date
+        today = func.current_date()
+        my_today = db.query(MoodDiary).filter(
+            MoodDiary.user_id == user_id,
+            MoodDiary.publish_status == "published",
+            func.date(MoodDiary.created_at) == today
+        ).first()
+        lover_today = db.query(MoodDiary).filter(
+            MoodDiary.user_id == user.lover_id,
+            MoodDiary.publish_status == "published",
+            func.date(MoodDiary.created_at) == today
+        ).first()
+        if my_today and lover_today:
+            try_unlock_achievement(user_id, "灵魂共鸣", db)
+            try_unlock_achievement(user.lover_id, "灵魂共鸣", db)
