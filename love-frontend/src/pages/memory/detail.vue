@@ -138,7 +138,7 @@ onMounted(() => {
 <style lang="scss" scoped>
 .detail-container {
   min-height: 100vh;
-  background: #FFF5F9;
+  background: transparent;
   padding: 20rpx;
 }
 

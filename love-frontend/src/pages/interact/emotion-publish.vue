@@ -45,7 +45,7 @@ const onSubmit = async () => {
 </script>
 
 <style scoped>
-.emotion-publish-page { background: #FFF5F9; min-height: 100vh; padding: 20rpx; }
+.emotion-publish-page { background: transparent; min-height: 100vh; padding: 20rpx; }
 .type-section { background: #fff; border-radius: 16rpx; padding: 30rpx; margin-bottom: 20rpx; }
 .section-label { font-size: 28rpx; font-weight: bold; display: block; margin-bottom: 20rpx; }
 .type-grid { display: flex; justify-content: space-around; }

@@ -36,7 +36,7 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.achievement-page { background: #FFF5F9; min-height: 100vh; padding: 20rpx; }
+.achievement-page { background: transparent; min-height: 100vh; padding: 20rpx; }
 .achievement-card { display: flex; align-items: center; background: #fff; border-radius: 16rpx; padding: 24rpx; margin-bottom: 16rpx; opacity: 0.6; }
 .achievement-card.unlocked { opacity: 1; border-left: 6rpx solid #FFD700; }
 .achievement-icon { font-size: 48rpx; margin-right: 20rpx; }

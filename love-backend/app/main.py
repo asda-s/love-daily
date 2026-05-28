@@ -112,7 +112,8 @@ async def validation_error_handler(request: Request, exc):
 
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
-    logger.info(f"{request.method} {request.url.path} from {request.client.host}")
+    client_host = request.client.host if request.client else "unknown"
+    logger.info(f"{request.method} {request.url.path} from {client_host}")
     response = await call_next(request)
     if response.status_code >= 400:
         logger.warning(f"{request.method} {request.url.path} -> {response.status_code}")

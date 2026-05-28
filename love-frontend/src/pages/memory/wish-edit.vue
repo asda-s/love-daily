@@ -63,7 +63,7 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { get, post, del } from '@/utils/request'
+import { get, post, put, del } from '@/utils/request'
 
 // 是否为编辑模式
 const isEdit = ref(false)
@@ -108,8 +108,13 @@ async function handleSubmit() {
 
   loading.value = true
   try {
-    await post('/memory/wish', formData)
-    uni.showToast({ title: '许愿成功！', icon: 'success' })
+    if (isEdit.value) {
+      await put(`/memory/wish/${wishId.value}`, formData)
+      uni.showToast({ title: '修改成功！', icon: 'success' })
+    } else {
+      await post('/memory/wish', formData)
+      uni.showToast({ title: '许愿成功！', icon: 'success' })
+    }
     
     setTimeout(() => {
       uni.navigateBack()
@@ -160,7 +165,7 @@ onMounted(() => {
 <style lang="scss" scoped>
 .edit-container {
   min-height: 100vh;
-  background: #FFF5F9;
+  background: transparent;
   padding-bottom: 40rpx;
 }
 

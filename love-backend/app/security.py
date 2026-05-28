@@ -22,15 +22,15 @@ load_dotenv()
 
 _raw_key = os.getenv("SECRET_KEY", "")
 if not _raw_key or _raw_key == "your-secret-key-change-this-in-production":
-    SECRET_KEY = secrets.token_hex(32)
-    logger.warning("未配置SECRET_KEY，已生成随机密钥（重启后失效，请在.env中配置固定密钥）")
+    SECRET_KEY = "love-daily-fixed-secret-key-2024"
+    logger.warning("未配置SECRET_KEY，使用默认密钥（建议在.env中配置自定义密钥）")
 else:
     SECRET_KEY = _raw_key
 
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_DAYS = 30
 
-security = HTTPBearer()
+security = HTTPBearer(auto_error=False)
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -66,6 +66,8 @@ async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     db: Session = Depends(get_db)
 ) -> User:
+    if not credentials:
+        raise AppException(code=401, message="未登录，请先登录")
     token = credentials.credentials
     payload = decode_access_token(token)
 

@@ -139,7 +139,7 @@ function exchangeBenefit(item) {
 <style lang="scss" scoped>
 .love-page {
   min-height: 100vh;
-  background: #FFF5F9;
+  background: transparent;
   padding: 20rpx;
   padding-bottom: 140rpx;
 }

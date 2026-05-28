@@ -172,7 +172,7 @@ onShow(() => {
 <style lang="scss" scoped>
 .timeline-container {
   min-height: 100vh;
-  background: #FFF5F9;
+  background: transparent;
   position: relative;
   padding-bottom: 140rpx;
 }

@@ -66,7 +66,7 @@ const onSubmit = async () => {
 </script>
 
 <style scoped>
-.bill-add-page { background: #FFF5F9; min-height: 100vh; padding: 20rpx; }
+.bill-add-page { background: transparent; min-height: 100vh; padding: 20rpx; }
 .form-section { background: #fff; border-radius: 16rpx; padding: 10rpx 30rpx; }
 .form-item { padding: 24rpx 0; border-bottom: 1rpx solid #FFF5F9; }
 .label { font-size: 26rpx; color: #666; margin-bottom: 16rpx; display: block; }

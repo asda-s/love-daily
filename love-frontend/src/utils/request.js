@@ -81,7 +81,7 @@ function request(options = {}) {
       method: method,
       data: data,
       header: header,
-      timeout: 30000,
+      timeout: 60000,
       success: (res) => {
         if (useLoading) {
           hideLoading()

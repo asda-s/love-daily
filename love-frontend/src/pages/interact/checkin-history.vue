@@ -50,7 +50,7 @@ const loadHistory = async () => {
 </script>
 
 <style scoped>
-.history-page { background: #FFF5F9; min-height: 100vh; }
+.history-page { background: transparent; min-height: 100vh; }
 .filter-bar { display: flex; gap: 16rpx; padding: 20rpx; overflow-x: auto; white-space: nowrap; }
 .filter-item { padding: 10rpx 24rpx; background: #fff; border-radius: 30rpx; font-size: 24rpx; color: #666; flex-shrink: 0; }
 .filter-item.active { background: #FF69B4; color: #fff; }

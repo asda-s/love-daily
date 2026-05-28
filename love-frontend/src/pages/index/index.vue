@@ -333,7 +333,7 @@ function goProfile() {
 <style lang="scss" scoped>
 .index-container {
   min-height: 100vh;
-  background: #FFF5F9;
+  background: transparent;
   padding-bottom: 140rpx;
 }
 

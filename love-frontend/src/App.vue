@@ -46,7 +46,6 @@ page {
   background-image: url('/static/bg.jpg');
   background-size: cover;
   background-position: center;
-  background-attachment: fixed;
   background-repeat: no-repeat;
   font-size: 28rpx;
   color: #333333;

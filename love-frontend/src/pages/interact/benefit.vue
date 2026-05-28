@@ -139,7 +139,7 @@ function deleteBenefit(benefit) {
 </script>
 
 <style scoped>
-.benefit-page { background: #FFF5F9; min-height: 100vh; padding-bottom: 140rpx; }
+.benefit-page { background: transparent; min-height: 100vh; padding-bottom: 140rpx; }
 .points-header { background: linear-gradient(135deg, #FF69B4, #FF8FB1); padding: 40rpx; text-align: center; color: #fff; }
 .points-label { font-size: 26rpx; opacity: 0.8; display: block; margin-bottom: 10rpx; }
 .points-value { font-size: 56rpx; font-weight: bold; }

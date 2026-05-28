@@ -152,6 +152,7 @@ import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { useUserStore } from '@/store/user.js'
 import { put, post } from '@/utils/request'
+import { getToken } from '@/utils/auth'
 
 const userStore = useUserStore()
 const userInfo = ref({})
@@ -254,7 +255,7 @@ function changeAvatar() {
     sourceType: ['album', 'camera'],
     success: async (chooseRes) => {
       const filePath = chooseRes.tempFilePaths[0]
-      const token = uni.getStorageSync('token')
+      const token = getToken()
       if (!token) {
         uni.showToast({ title: '请先登录', icon: 'none' })
         return
@@ -323,7 +324,7 @@ function handleLogout() {
 <style lang="scss" scoped>
 .profile-page {
   min-height: 100vh;
-  background: #FFF5F9;
+  background: transparent;
   padding-bottom: 120rpx;
 }
 .profile-header {

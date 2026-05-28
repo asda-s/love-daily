@@ -33,7 +33,7 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.exchange-page { background: #FFF5F9; min-height: 100vh; }
+.exchange-page { background: transparent; min-height: 100vh; }
 .record-list { padding: 20rpx; }
 .record-item { display: flex; justify-content: space-between; align-items: center; background: #fff; border-radius: 12rpx; padding: 24rpx; margin-bottom: 12rpx; }
 .record-name { font-size: 28rpx; font-weight: bold; }

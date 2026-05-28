@@ -3,7 +3,7 @@
 处理时光线、纪念日、心愿清单、悄悄话等接口
 """
 
-from fastapi import APIRouter, Depends, Query, UploadFile, File
+from fastapi import APIRouter, Depends, Query, UploadFile, File, Request
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_
 from datetime import datetime, date
@@ -241,6 +241,7 @@ async def get_memory_detail(
 
 @router.post("/upload")
 async def upload_image(
+    request: Request,
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_user)
 ):
@@ -332,7 +333,8 @@ async def upload_image(
         f.write(contents)
 
     logger.info(f"图片上传: user={current_user.id} file={filename} size={len(contents)}")
-    url = f"/uploads/{filename}"
+    base_url = str(request.base_url).rstrip('/')
+    url = f"{base_url}/uploads/{filename}"
     return success_response(
         data={"url": url},
         message="上传成功"
