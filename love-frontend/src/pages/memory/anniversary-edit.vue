@@ -28,7 +28,7 @@
         <switch 
           :checked="formData.is_yearly" 
           @change="formData.is_yearly = $event.detail.value"
-          color="#FF6B9D"
+          color="#FF69B4"
         />
       </view>
 
@@ -218,7 +218,7 @@ onMounted(() => {
 <style lang="scss" scoped>
 .edit-container {
   min-height: 100vh;
-  background: #f8f8f8;
+  background: #FFF5F9;
   padding-bottom: 40rpx;
 }
 
@@ -231,7 +231,7 @@ onMounted(() => {
 
 .form-item {
   padding: 24rpx;
-  border-bottom: 1rpx solid #f5f5f5;
+  border-bottom: 1rpx solid #FFF5F9;
 
   &:last-child {
     border-bottom: none;
@@ -282,14 +282,14 @@ onMounted(() => {
 
 .day-option {
   padding: 12rpx 24rpx;
-  background: #f5f5f5;
+  background: #FFF5F9;
   border-radius: 8rpx;
   font-size: 26rpx;
   color: #666666;
 
   &.active {
-    background: #FFE8F0;
-    color: #FF6B9D;
+    background: #FFE4EC;
+    color: #FF69B4;
   }
 }
 
@@ -301,15 +301,15 @@ onMounted(() => {
 .type-option {
   flex: 1;
   padding: 20rpx;
-  background: #f5f5f5;
+  background: #FFF5F9;
   border-radius: 8rpx;
   text-align: center;
   font-size: 26rpx;
   color: #666666;
 
   &.active {
-    background: #FFE8F0;
-    color: #FF6B9D;
+    background: #FFE4EC;
+    color: #FF69B4;
   }
 }
 
@@ -321,7 +321,7 @@ onMounted(() => {
   width: 100%;
   height: 88rpx;
   line-height: 88rpx;
-  background: #FF6B9D;
+  background: #FF69B4;
   color: #FFFFFF;
   font-size: 32rpx;
   border-radius: 16rpx;
@@ -337,9 +337,9 @@ onMounted(() => {
   height: 88rpx;
   line-height: 88rpx;
   background: #FFFFFF;
-  color: #FF6B9D;
+  color: #FF69B4;
   font-size: 32rpx;
   border-radius: 16rpx;
-  border: 2rpx solid #FF6B9D;
+  border: 2rpx solid #FF69B4;
 }
 </style>

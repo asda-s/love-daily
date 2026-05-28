@@ -33,12 +33,12 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.exchange-page { background: #f5f5f5; min-height: 100vh; }
+.exchange-page { background: #FFF5F9; min-height: 100vh; }
 .record-list { padding: 20rpx; }
 .record-item { display: flex; justify-content: space-between; align-items: center; background: #fff; border-radius: 12rpx; padding: 24rpx; margin-bottom: 12rpx; }
 .record-name { font-size: 28rpx; font-weight: bold; }
 .record-time { font-size: 22rpx; color: #999; margin-top: 6rpx; }
-.record-points { font-size: 28rpx; color: #FF6B9D; font-weight: bold; display: block; text-align: right; }
+.record-points { font-size: 28rpx; color: #FF69B4; font-weight: bold; display: block; text-align: right; }
 .fulfill-tag { font-size: 20rpx; color: #999; margin-top: 4rpx; }
 .fulfill-tag.done { color: #4caf50; }
 .empty { text-align: center; padding: 80rpx; color: #999; }

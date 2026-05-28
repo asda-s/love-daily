@@ -144,7 +144,7 @@ onShow(() => {
 <style lang="scss" scoped>
 .whisper-container {
   min-height: 100vh;
-  background: #f8f8f8;
+  background: #FFF5F9;
   position: relative;
 }
 
@@ -154,7 +154,7 @@ onShow(() => {
   bottom: 120rpx;
   width: 100rpx;
   height: 100rpx;
-  background: #FF6B9D;
+  background: #FF69B4;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -164,7 +164,7 @@ onShow(() => {
 }
 
 .unread-banner {
-  background: linear-gradient(135deg, #FF6B9D, #FF8FB1);
+  background: linear-gradient(135deg, #FF69B4, #FF8FB1);
   padding: 16rpx 30rpx;
   text-align: center;
   position: sticky;
@@ -238,7 +238,7 @@ onShow(() => {
   box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
 
   &.is-self {
-    background: #FFE8F0;
+    background: #FFE4EC;
   }
 }
 
@@ -265,7 +265,7 @@ onShow(() => {
   color: #999999;
 
   &.unread {
-    color: #FF6B9D;
+    color: #FF69B4;
   }
 }
 

@@ -40,9 +40,9 @@ export default {
 </script>
 
 <style>
-/* 全局样式 */
+/* 全局样式 - Hello Kitty 主题 */
 page {
-  background-color: #f8f8f8;
+  background-color: #FFF5F9;
   font-size: 28rpx;
   color: #333333;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -50,8 +50,9 @@ page {
 
 /* 全局变量 */
 :root {
-  --primary-color: #FF6B9D;
-  --primary-light: #FFE8F0;
+  --primary-color: #FF69B4;
+  --primary-light: #FFE4EC;
+  --accent-color: #FF2D55;
   --bg-color: #FFFFFF;
   --text-primary: #333333;
   --text-secondary: #666666;

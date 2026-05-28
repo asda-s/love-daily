@@ -37,7 +37,7 @@
         <input class="dialog-input" v-model="form.rule" placeholder="兑换规则（可选）" />
         <view class="dialog-row">
           <text>可重复兑换</text>
-          <switch :checked="form.is_repeatable" @change="form.is_repeatable = $event.detail.value" color="#FF6B9D" />
+          <switch :checked="form.is_repeatable" @change="form.is_repeatable = $event.detail.value" color="#FF69B4" />
         </view>
         <view class="dialog-btns">
           <view class="dialog-btn cancel" @click="showAdd = false">取消</view>
@@ -139,17 +139,17 @@ function deleteBenefit(benefit) {
 </script>
 
 <style scoped>
-.benefit-page { background: #f5f5f5; min-height: 100vh; padding-bottom: 140rpx; }
-.points-header { background: linear-gradient(135deg, #FF6B9D, #FF8E53); padding: 40rpx; text-align: center; color: #fff; }
+.benefit-page { background: #FFF5F9; min-height: 100vh; padding-bottom: 140rpx; }
+.points-header { background: linear-gradient(135deg, #FF69B4, #FF8FB1); padding: 40rpx; text-align: center; color: #fff; }
 .points-label { font-size: 26rpx; opacity: 0.8; display: block; margin-bottom: 10rpx; }
 .points-value { font-size: 56rpx; font-weight: bold; }
 .benefit-list { padding: 20rpx; height: calc(100vh - 200rpx); }
 .benefit-card { display: flex; align-items: center; background: #fff; border-radius: 16rpx; padding: 24rpx; margin-bottom: 16rpx; }
 .benefit-info { flex: 1; }
 .benefit-name { font-size: 30rpx; font-weight: bold; }
-.benefit-points { font-size: 24rpx; color: #FF6B9D; margin-top: 6rpx; }
+.benefit-points { font-size: 24rpx; color: #FF69B4; margin-top: 6rpx; }
 .benefit-rule { font-size: 22rpx; color: #999; margin-top: 4rpx; }
-.exchange-btn { padding: 12rpx 28rpx; background: #FF6B9D; color: #fff; border-radius: 30rpx; font-size: 24rpx; }
+.exchange-btn { padding: 12rpx 28rpx; background: #FF69B4; color: #fff; border-radius: 30rpx; font-size: 24rpx; }
 .exchange-btn.disabled { background: #e0e0e0; color: #999; }
 .delete-btn { padding: 12rpx 28rpx; background: #ff4d4f; color: #fff; border-radius: 30rpx; font-size: 24rpx; margin-left: 16rpx; }
 .empty { text-align: center; padding: 80rpx 40rpx; color: #999; }
@@ -157,8 +157,8 @@ function deleteBenefit(benefit) {
 .empty-text { font-size: 30rpx; color: #666; display: block; margin-bottom: 12rpx; }
 .empty-hint { font-size: 24rpx; color: #bbb; display: block; }
 .bottom-btns { position: fixed; bottom: 110rpx; left: 0; right: 0; display: flex; gap: 16rpx; padding: 20rpx; background: #fff; z-index: 100; }
-.btn { flex: 1; text-align: center; padding: 24rpx; background: #FF6B9D; color: #fff; border-radius: 40rpx; font-size: 28rpx; }
-.btn.secondary { background: #f5f5f5; color: #666; }
+.btn { flex: 1; text-align: center; padding: 24rpx; background: #FF69B4; color: #fff; border-radius: 40rpx; font-size: 28rpx; }
+.btn.secondary { background: #FFF5F9; color: #666; }
 .dialog-mask { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 999; }
 .dialog { background: #fff; border-radius: 16rpx; padding: 40rpx; width: 80%; }
 .dialog-title { font-size: 32rpx; font-weight: bold; margin-bottom: 30rpx; text-align: center; }
@@ -166,6 +166,6 @@ function deleteBenefit(benefit) {
 .dialog-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20rpx; font-size: 28rpx; }
 .dialog-btns { display: flex; gap: 20rpx; margin-top: 30rpx; }
 .dialog-btn { flex: 1; text-align: center; padding: 18rpx; border-radius: 30rpx; font-size: 28rpx; }
-.dialog-btn.cancel { background: #f5f5f5; color: #666; }
-.dialog-btn.confirm { background: #FF6B9D; color: #fff; }
+.dialog-btn.cancel { background: #FFF5F9; color: #666; }
+.dialog-btn.confirm { background: #FF69B4; color: #fff; }
 </style>

@@ -15,7 +15,7 @@
     </view>
     <view class="sync-row">
       <text>同步给TA</text>
-      <switch :checked="form.is_sync" @change="form.is_sync = $event.detail.value" color="#FF6B9D" />
+      <switch :checked="form.is_sync" @change="form.is_sync = $event.detail.value" color="#FF69B4" />
     </view>
     <view class="submit-btn" @click="onSubmit">发布</view>
   </view>
@@ -45,17 +45,17 @@ const onSubmit = async () => {
 </script>
 
 <style scoped>
-.emotion-publish-page { background: #f5f5f5; min-height: 100vh; padding: 20rpx; }
+.emotion-publish-page { background: #FFF5F9; min-height: 100vh; padding: 20rpx; }
 .type-section { background: #fff; border-radius: 16rpx; padding: 30rpx; margin-bottom: 20rpx; }
 .section-label { font-size: 28rpx; font-weight: bold; display: block; margin-bottom: 20rpx; }
 .type-grid { display: flex; justify-content: space-around; }
 .type-item { text-align: center; padding: 16rpx 20rpx; border-radius: 16rpx; }
-.type-item.active { background: #fff0f3; }
+.type-item.active { background: #FFE4EC; }
 .type-icon { font-size: 48rpx; display: block; }
 .type-name { font-size: 22rpx; color: #666; margin-top: 8rpx; }
 .content-section { background: #fff; border-radius: 16rpx; padding: 30rpx; margin-bottom: 20rpx; position: relative; }
 .content-input { width: 100%; min-height: 200rpx; font-size: 28rpx; }
 .word-count { position: absolute; right: 30rpx; bottom: 20rpx; font-size: 22rpx; color: #ccc; }
 .sync-row { display: flex; justify-content: space-between; align-items: center; background: #fff; border-radius: 16rpx; padding: 24rpx 30rpx; margin-bottom: 40rpx; font-size: 28rpx; }
-.submit-btn { background: #FF6B9D; color: #fff; text-align: center; padding: 24rpx; border-radius: 40rpx; font-size: 30rpx; }
+.submit-btn { background: #FF69B4; color: #fff; text-align: center; padding: 24rpx; border-radius: 40rpx; font-size: 30rpx; }
 </style>

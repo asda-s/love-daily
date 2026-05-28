@@ -67,7 +67,7 @@
         </view>
         <view class="dialog-row">
           <text>情侣共同打卡</text>
-          <switch :checked="newProject.is_joint" @change="newProject.is_joint = $event.detail.value" color="#FF6B9D" />
+          <switch :checked="newProject.is_joint" @change="newProject.is_joint = $event.detail.value" color="#FF69B4" />
         </view>
         <view class="dialog-btns">
           <view class="dialog-btn cancel" @click="showAddDialog = false">取消</view>
@@ -159,7 +159,7 @@ async function onRefresh() {
 
 <style scoped>
 .checkin-page {
-  background: #f5f5f5;
+  background: #FFF5F9;
   min-height: 100vh;
 }
 .checkin-scroll {
@@ -168,7 +168,7 @@ async function onRefresh() {
 }
 .stats-bar {
   display: flex;
-  background: linear-gradient(135deg, #FF6B9D, #FF8E53);
+  background: linear-gradient(135deg, #FF69B4, #FF8FB1);
   padding: 30rpx;
 }
 .stat-item {
@@ -211,8 +211,8 @@ async function onRefresh() {
 }
 .points-tag {
   font-size: 22rpx;
-  background: #fff0f3;
-  color: #FF6B9D;
+  background: #FFE4EC;
+  color: #FF69B4;
   padding: 4rpx 12rpx;
   border-radius: 10rpx;
 }
@@ -229,7 +229,7 @@ async function onRefresh() {
 }
 .checkin-btn {
   padding: 16rpx 32rpx;
-  background: #FF6B9D;
+  background: #FF69B4;
   color: #fff;
   border-radius: 30rpx;
   font-size: 26rpx;
@@ -274,13 +274,13 @@ async function onRefresh() {
   flex: 1;
   text-align: center;
   padding: 24rpx;
-  background: #FF6B9D;
+  background: #FF69B4;
   color: #fff;
   border-radius: 40rpx;
   font-size: 28rpx;
 }
 .action-btn.secondary {
-  background: #f5f5f5;
+  background: #FFF5F9;
   color: #666;
 }
 .dialog-mask {
@@ -339,11 +339,11 @@ async function onRefresh() {
   font-size: 28rpx;
 }
 .dialog-btn.cancel {
-  background: #f5f5f5;
+  background: #FFF5F9;
   color: #666;
 }
 .dialog-btn.confirm {
-  background: #FF6B9D;
+  background: #FF69B4;
   color: #fff;
 }
 </style>

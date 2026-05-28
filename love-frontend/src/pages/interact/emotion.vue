@@ -63,7 +63,7 @@ const goPublish = () => {
 </script>
 
 <style scoped>
-.emotion-page { background: #f5f5f5; min-height: 100vh; padding: 20rpx; padding-bottom: 120rpx; }
+.emotion-page { background: #FFF5F9; min-height: 100vh; padding: 20rpx; padding-bottom: 120rpx; }
 .emotion-card { background: #fff; border-radius: 16rpx; padding: 24rpx; margin-bottom: 16rpx; }
 .emotion-card.happy { border-left: 6rpx solid #FFD700; }
 .emotion-card.sad { border-left: 6rpx solid #6495ED; }
@@ -77,13 +77,13 @@ const goPublish = () => {
 .emotion-time { font-size: 22rpx; color: #999; }
 .delete-btn { font-size: 36rpx; color: #ccc; padding: 10rpx; }
 .emotion-content { font-size: 28rpx; line-height: 1.6; }
-.warm-reply { display: flex; align-items: flex-start; gap: 8rpx; margin-top: 16rpx; padding: 16rpx; background: #fff0f3; border-radius: 12rpx; }
+.warm-reply { display: flex; align-items: flex-start; gap: 8rpx; margin-top: 16rpx; padding: 16rpx; background: #FFE4EC; border-radius: 12rpx; }
 .warm-icon { font-size: 28rpx; }
-.warm-text { font-size: 26rpx; color: #FF6B9D; line-height: 1.5; }
-.sync-tag { font-size: 20rpx; color: #FF6B9D; margin-top: 12rpx; }
+.warm-text { font-size: 26rpx; color: #FF69B4; line-height: 1.5; }
+.sync-tag { font-size: 20rpx; color: #FF69B4; margin-top: 12rpx; }
 .empty { text-align: center; padding: 80rpx 40rpx; color: #999; }
 .empty-icon { font-size: 80rpx; display: block; margin-bottom: 20rpx; }
 .empty-text { font-size: 30rpx; color: #666; display: block; margin-bottom: 12rpx; }
 .empty-hint { font-size: 24rpx; color: #bbb; display: block; }
-.fab { position: fixed; right: 40rpx; bottom: 140rpx; width: 100rpx; height: 100rpx; background: #FF6B9D; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 48rpx; color: #fff; box-shadow: 0 4rpx 16rpx rgba(255,107,157,0.4); }
+.fab { position: fixed; right: 40rpx; bottom: 140rpx; width: 100rpx; height: 100rpx; background: #FF69B4; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 48rpx; color: #fff; box-shadow: 0 4rpx 16rpx rgba(255,107,157,0.4); }
 </style>

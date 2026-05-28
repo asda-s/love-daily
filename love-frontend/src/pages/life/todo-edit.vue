@@ -121,7 +121,7 @@ const onDelete = async () => {
 
 <style scoped>
 .todo-edit-page {
-  background: #f5f5f5;
+  background: #FFF5F9;
   min-height: 100vh;
   padding: 20rpx;
 }
@@ -132,7 +132,7 @@ const onDelete = async () => {
 }
 .form-item {
   padding: 24rpx 0;
-  border-bottom: 1rpx solid #f5f5f5;
+  border-bottom: 1rpx solid #FFF5F9;
 }
 .label {
   font-size: 26rpx;
@@ -160,8 +160,8 @@ const onDelete = async () => {
   color: #666;
 }
 .radio.active {
-  background: #FF6B9D;
-  border-color: #FF6B9D;
+  background: #FF69B4;
+  border-color: #FF69B4;
   color: #fff;
 }
 .picker-value {
@@ -172,7 +172,7 @@ const onDelete = async () => {
   margin-top: 40rpx;
 }
 .submit-btn {
-  background: #FF6B9D;
+  background: #FF69B4;
   color: #fff;
   text-align: center;
   padding: 24rpx;

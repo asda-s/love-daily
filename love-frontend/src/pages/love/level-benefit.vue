@@ -40,13 +40,13 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.level-benefit-page { background: #f5f5f5; min-height: 100vh; padding: 20rpx; }
+.level-benefit-page { background: #FFF5F9; min-height: 100vh; padding: 20rpx; }
 .level-card { display: flex; align-items: center; background: #fff; border-radius: 16rpx; padding: 24rpx; margin-bottom: 16rpx; opacity: 0.5; }
 .level-card.reached { opacity: 1; }
-.level-card.current { border: 2rpx solid #FF6B9D; opacity: 1; }
+.level-card.current { border: 2rpx solid #FF69B4; opacity: 1; }
 .level-badge { width: 80rpx; height: 80rpx; background: #f0f0f0; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 20rpx; }
-.level-card.reached .level-badge { background: linear-gradient(135deg, #FF6B9D, #FF8E53); }
-.level-card.current .level-badge { background: linear-gradient(135deg, #FF6B9D, #FF8E53); }
+.level-card.reached .level-badge { background: linear-gradient(135deg, #FF69B4, #FF8FB1); }
+.level-card.current .level-badge { background: linear-gradient(135deg, #FF69B4, #FF8FB1); }
 .level-num { font-size: 24rpx; font-weight: bold; color: #666; }
 .level-card.reached .level-num, .level-card.current .level-num { color: #fff; }
 .level-info { flex: 1; }
@@ -55,6 +55,6 @@ onMounted(async () => {
 .level-points { font-size: 22rpx; color: #999; }
 .level-status { text-align: right; }
 .reached-tag { font-size: 22rpx; color: #4caf50; background: #e8f5e9; padding: 4rpx 12rpx; border-radius: 10rpx; }
-.current-tag { font-size: 22rpx; color: #FF6B9D; background: #fff0f3; padding: 4rpx 12rpx; border-radius: 10rpx; }
+.current-tag { font-size: 22rpx; color: #FF69B4; background: #FFE4EC; padding: 4rpx 12rpx; border-radius: 10rpx; }
 .locked-tag { font-size: 22rpx; color: #999; }
 </style>

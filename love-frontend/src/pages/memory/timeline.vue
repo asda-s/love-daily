@@ -172,7 +172,7 @@ onShow(() => {
 <style lang="scss" scoped>
 .timeline-container {
   min-height: 100vh;
-  background: #f8f8f8;
+  background: #FFF5F9;
   position: relative;
   padding-bottom: 140rpx;
 }
@@ -183,7 +183,7 @@ onShow(() => {
   bottom: 120rpx;
   width: 100rpx;
   height: 100rpx;
-  background: #FF6B9D;
+  background: #FF69B4;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -243,7 +243,7 @@ onShow(() => {
   justify-content: space-between;
   align-items: center;
   padding: 20rpx 24rpx;
-  border-bottom: 1rpx solid #f5f5f5;
+  border-bottom: 1rpx solid #FFF5F9;
 }
 
 .user-info {

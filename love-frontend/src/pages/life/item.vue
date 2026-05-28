@@ -137,7 +137,7 @@ function deleteItem(item) {
 
 <style scoped>
 .item-page {
-  background: #f5f5f5;
+  background: #FFF5F9;
   min-height: 100vh;
   padding-bottom: 120rpx;
 }
@@ -150,13 +150,13 @@ function deleteItem(item) {
 }
 .search-input {
   flex: 1;
-  background: #f5f5f5;
+  background: #FFF5F9;
   padding: 16rpx 24rpx;
   border-radius: 30rpx;
   font-size: 28rpx;
 }
 .category-picker {
-  background: #f5f5f5;
+  background: #FFF5F9;
   padding: 16rpx 24rpx;
   border-radius: 30rpx;
   font-size: 26rpx;
@@ -220,7 +220,7 @@ function deleteItem(item) {
   font-size: 22rpx;
 }
 .quantity {
-  color: #FF6B9D;
+  color: #FF69B4;
 }
 .item-expiry {
   font-size: 24rpx;
@@ -254,7 +254,7 @@ function deleteItem(item) {
   bottom: 140rpx;
   width: 100rpx;
   height: 100rpx;
-  background: #FF6B9D;
+  background: #FF69B4;
   border-radius: 50%;
   display: flex;
   align-items: center;

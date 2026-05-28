@@ -205,13 +205,13 @@
 	"globalStyle": {
 		"navigationBarTextStyle": "white",
 		"navigationBarTitleText": "心动日常",
-		"navigationBarBackgroundColor": "#FF6B9D",
-		"backgroundColor": "#f8f8f8"
+		"navigationBarBackgroundColor": "#FF69B4",
+		"backgroundColor": "#FFF5F9"
 	},
 	"tabBar": {
 		"custom": true,
 		"color": "#999999",
-		"selectedColor": "#FF6B9D",
+		"selectedColor": "#FF69B4",
 		"backgroundColor": "#FFFFFF",
 		"borderStyle": "white",
 		"list": [

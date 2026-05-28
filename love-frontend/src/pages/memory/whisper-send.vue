@@ -17,7 +17,7 @@
         <switch 
           :checked="formData.is_scheduled" 
           @change="formData.is_scheduled = $event.detail.value"
-          color="#FF6B9D"
+          color="#FF69B4"
         />
       </view>
 
@@ -128,7 +128,7 @@ async function handleSubmit() {
 <style lang="scss" scoped>
 .send-container {
   min-height: 100vh;
-  background: #f8f8f8;
+  background: #FFF5F9;
   padding-bottom: 40rpx;
 }
 
@@ -141,7 +141,7 @@ async function handleSubmit() {
 
 .form-item {
   padding: 24rpx;
-  border-bottom: 1rpx solid #f5f5f5;
+  border-bottom: 1rpx solid #FFF5F9;
 
   &:last-child {
     border-bottom: none;
@@ -186,7 +186,7 @@ async function handleSubmit() {
   width: 100%;
   height: 88rpx;
   line-height: 88rpx;
-  background: #FF6B9D;
+  background: #FF69B4;
   color: #FFFFFF;
   font-size: 32rpx;
   border-radius: 16rpx;

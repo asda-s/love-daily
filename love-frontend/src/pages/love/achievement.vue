@@ -36,14 +36,14 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.achievement-page { background: #f5f5f5; min-height: 100vh; padding: 20rpx; }
+.achievement-page { background: #FFF5F9; min-height: 100vh; padding: 20rpx; }
 .achievement-card { display: flex; align-items: center; background: #fff; border-radius: 16rpx; padding: 24rpx; margin-bottom: 16rpx; opacity: 0.6; }
 .achievement-card.unlocked { opacity: 1; border-left: 6rpx solid #FFD700; }
 .achievement-icon { font-size: 48rpx; margin-right: 20rpx; }
 .achievement-info { flex: 1; }
 .achievement-name { font-size: 28rpx; font-weight: bold; margin-bottom: 6rpx; }
 .achievement-desc { font-size: 24rpx; color: #666; margin-bottom: 6rpx; }
-.achievement-reward { font-size: 22rpx; color: #FF6B9D; }
+.achievement-reward { font-size: 22rpx; color: #FF69B4; }
 .achievement-status { text-align: right; }
 .status-text { font-size: 24rpx; color: #4caf50; display: block; }
 .status-text.locked { color: #ccc; }

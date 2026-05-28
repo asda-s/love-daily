@@ -66,18 +66,18 @@ const onSubmit = async () => {
 </script>
 
 <style scoped>
-.bill-add-page { background: #f5f5f5; min-height: 100vh; padding: 20rpx; }
+.bill-add-page { background: #FFF5F9; min-height: 100vh; padding: 20rpx; }
 .form-section { background: #fff; border-radius: 16rpx; padding: 10rpx 30rpx; }
-.form-item { padding: 24rpx 0; border-bottom: 1rpx solid #f5f5f5; }
+.form-item { padding: 24rpx 0; border-bottom: 1rpx solid #FFF5F9; }
 .label { font-size: 26rpx; color: #666; margin-bottom: 16rpx; display: block; }
 .input { font-size: 28rpx; }
 .input.amount { font-size: 48rpx; font-weight: bold; color: #333; }
 .type-grid { display: flex; gap: 16rpx; flex-wrap: wrap; }
 .type-item { padding: 12rpx 24rpx; border: 1rpx solid #ddd; border-radius: 30rpx; font-size: 26rpx; color: #666; }
-.type-item.active { background: #FF6B9D; border-color: #FF6B9D; color: #fff; }
+.type-item.active { background: #FF69B4; border-color: #FF69B4; color: #fff; }
 .radio-group { display: flex; gap: 20rpx; }
 .radio { padding: 12rpx 32rpx; border: 1rpx solid #ddd; border-radius: 30rpx; font-size: 26rpx; color: #666; }
-.radio.active { background: #FF6B9D; border-color: #FF6B9D; color: #fff; }
+.radio.active { background: #FF69B4; border-color: #FF69B4; color: #fff; }
 .picker-value { font-size: 28rpx; color: #333; }
-.submit-btn { background: #FF6B9D; color: #fff; text-align: center; padding: 24rpx; border-radius: 40rpx; font-size: 30rpx; margin-top: 40rpx; }
+.submit-btn { background: #FF69B4; color: #fff; text-align: center; padding: 24rpx; border-radius: 40rpx; font-size: 30rpx; margin-top: 40rpx; }
 </style>

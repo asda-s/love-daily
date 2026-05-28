@@ -1,9 +1,14 @@
 <template>
   <view class="register-container">
+    <!-- Hello Kitty 装饰 -->
+    <view class="deco-bow deco-bow-1"></view>
+    <view class="deco-bow deco-bow-2"></view>
+    <view class="deco-heart">♡</view>
+
     <!-- 注册表单 -->
     <view class="form-area">
       <view class="header">
-        <text class="title">创建账号</text>
+        <text class="title">🎀 创建账号</text>
         <text class="subtitle">开启你们的心动日常</text>
       </view>
 
@@ -127,8 +132,36 @@ function goLogin() {
 <style lang="scss" scoped>
 .register-container {
   min-height: 100vh;
-  background: linear-gradient(180deg, #FFE8F0 0%, #FFFFFF 100%);
+  background: linear-gradient(180deg, #FFE4EC 0%, #FFFFFF 100%);
   padding: 0 40rpx;
+  position: relative;
+  overflow: hidden;
+}
+.deco-bow {
+  position: absolute;
+  width: 40rpx;
+  height: 20rpx;
+  opacity: 0.15;
+  &::before, &::after {
+    content: '';
+    position: absolute;
+    width: 18rpx;
+    height: 18rpx;
+    background: #FF69B4;
+    border-radius: 50% 50% 50% 0;
+  }
+  &::before { left: 0; transform: rotate(-45deg); }
+  &::after { right: 0; transform: rotate(45deg); }
+}
+.deco-bow-1 { top: 40rpx; right: 100rpx; transform: rotate(15deg); }
+.deco-bow-2 { bottom: 200rpx; left: 60rpx; transform: rotate(-20deg); }
+.deco-heart {
+  position: absolute;
+  top: 120rpx;
+  left: 80rpx;
+  font-size: 28rpx;
+  color: #FF69B4;
+  opacity: 0.12;
 }
 
 .form-area {
@@ -173,7 +206,7 @@ function goLogin() {
   width: 100%;
   height: 88rpx;
   line-height: 88rpx;
-  background: #FF6B9D;
+  background: #FF69B4;
   color: #FFFFFF;
   font-size: 32rpx;
   border-radius: 16rpx;
@@ -194,7 +227,7 @@ function goLogin() {
   color: #666666;
 
   .link {
-    color: #FF6B9D;
+    color: #FF69B4;
     margin-left: 8rpx;
   }
 }

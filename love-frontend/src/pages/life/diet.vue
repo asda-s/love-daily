@@ -117,7 +117,7 @@ const saveMyPreference = async () => {
 
 <style scoped>
 .diet-page {
-  background: #f5f5f5;
+  background: #FFF5F9;
   min-height: 100vh;
   padding: 20rpx;
 }
@@ -133,7 +133,7 @@ const saveMyPreference = async () => {
 }
 .form-item {
   padding: 20rpx 0;
-  border-bottom: 1rpx solid #f5f5f5;
+  border-bottom: 1rpx solid #FFF5F9;
 }
 .label {
   font-size: 26rpx;
@@ -154,8 +154,8 @@ const saveMyPreference = async () => {
   color: #666;
 }
 .tag.active {
-  background: #FF6B9D;
-  border-color: #FF6B9D;
+  background: #FF69B4;
+  border-color: #FF69B4;
   color: #fff;
 }
 .input {
@@ -163,7 +163,7 @@ const saveMyPreference = async () => {
   padding: 10rpx 0;
 }
 .save-btn {
-  background: #FF6B9D;
+  background: #FF69B4;
   color: #fff;
   text-align: center;
   padding: 24rpx;
@@ -183,7 +183,7 @@ const saveMyPreference = async () => {
   display: flex;
   justify-content: space-between;
   padding: 16rpx 0;
-  border-bottom: 1rpx solid #f5f5f5;
+  border-bottom: 1rpx solid #FFF5F9;
 }
 .info-label {
   color: #666;

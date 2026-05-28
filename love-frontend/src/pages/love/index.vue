@@ -139,12 +139,12 @@ function exchangeBenefit(item) {
 <style lang="scss" scoped>
 .love-page {
   min-height: 100vh;
-  background: #f5f5f5;
+  background: #FFF5F9;
   padding: 20rpx;
   padding-bottom: 140rpx;
 }
 .level-card {
-  background: linear-gradient(135deg, #FF6B9D, #FF8FB1);
+  background: linear-gradient(135deg, #FF69B4, #FF8FB1);
   border-radius: 24rpx;
   padding: 40rpx;
   margin-bottom: 30rpx;
@@ -235,14 +235,14 @@ function exchangeBenefit(item) {
   display: flex;
   align-items: center;
   padding: 24rpx 0;
-  border-bottom: 1rpx solid #f5f5f5;
+  border-bottom: 1rpx solid #FFF5F9;
 }
 .guide-item:last-child { border-bottom: none; }
 .guide-icon { font-size: 40rpx; margin-right: 20rpx; }
 .guide-info { flex: 1; }
 .guide-name { display: block; font-size: 28rpx; color: #333; margin-bottom: 4rpx; }
 .guide-desc { display: block; font-size: 22rpx; color: #999; }
-.guide-pts { font-size: 28rpx; color: #FF6B9D; font-weight: bold; }
+.guide-pts { font-size: 28rpx; color: #FF69B4; font-weight: bold; }
 .benefit-card {
   background: #fff;
   border-radius: 20rpx;
@@ -253,7 +253,7 @@ function exchangeBenefit(item) {
   display: flex;
   align-items: center;
   padding: 24rpx 0;
-  border-bottom: 1rpx solid #f5f5f5;
+  border-bottom: 1rpx solid #FFF5F9;
 }
 .benefit-item:last-child { border-bottom: none; }
 .benefit-icon { font-size: 48rpx; margin-right: 20rpx; }
@@ -261,7 +261,7 @@ function exchangeBenefit(item) {
 .benefit-name { display: block; font-size: 28rpx; color: #333; margin-bottom: 4rpx; }
 .benefit-cost { display: block; font-size: 22rpx; color: #999; }
 .benefit-btn {
-  background: #FF6B9D;
+  background: #FF69B4;
   color: #fff;
   padding: 12rpx 28rpx;
   border-radius: 30rpx;

@@ -149,7 +149,7 @@ onShow(() => {
 <style lang="scss" scoped>
 .todo-page {
   min-height: 100vh;
-  background: #f5f5f5;
+  background: #FFF5F9;
   padding-bottom: 140rpx;
 }
 .main-tabs {
@@ -171,7 +171,7 @@ onShow(() => {
   gap: 8rpx;
 }
 .main-tab.active {
-  color: #FF6B9D;
+  color: #FF69B4;
   font-weight: bold;
 }
 .main-tab.active::after {
@@ -181,11 +181,11 @@ onShow(() => {
   left: 30%;
   right: 30%;
   height: 6rpx;
-  background: #FF6B9D;
+  background: #FF69B4;
   border-radius: 3rpx;
 }
 .tab-badge {
-  background: #FF6B9D;
+  background: #FF69B4;
   color: #fff;
   font-size: 20rpx;
   min-width: 32rpx;
@@ -208,7 +208,7 @@ onShow(() => {
   background: #fff;
 }
 .sub-tab.active {
-  background: #FF6B9D;
+  background: #FF69B4;
   color: #fff;
 }
 .empty-state {
@@ -235,7 +235,7 @@ onShow(() => {
 }
 .empty-btn {
   display: inline-block;
-  background: #FF6B9D;
+  background: #FF69B4;
   color: #fff;
   padding: 16rpx 60rpx;
   border-radius: 40rpx;
@@ -272,8 +272,8 @@ onShow(() => {
   flex-shrink: 0;
 }
 .todo-check.checked {
-  background: #FF6B9D;
-  border-color: #FF6B9D;
+  background: #FF69B4;
+  border-color: #FF69B4;
   color: #fff;
 }
 .todo-content { flex: 1; }
@@ -294,7 +294,7 @@ onShow(() => {
 }
 .todo-deadline {
   font-size: 22rpx;
-  color: #FF6B9D;
+  color: #FF69B4;
 }
 .todo-tag {
   font-size: 20rpx;
@@ -302,8 +302,8 @@ onShow(() => {
   border-radius: 10rpx;
 }
 .todo-tag.shared {
-  background: #fff0f3;
-  color: #FF6B9D;
+  background: #FFE4EC;
+  color: #FF69B4;
 }
 .todo-tag.mine {
   background: #f0f0f0;
@@ -316,7 +316,7 @@ onShow(() => {
 }
 .todo-edit {
   font-size: 24rpx;
-  color: #FF6B9D;
+  color: #FF69B4;
   padding: 8rpx 16rpx;
 }
 .todo-delete {
@@ -330,7 +330,7 @@ onShow(() => {
   bottom: 140rpx;
   width: 100rpx;
   height: 100rpx;
-  background: #FF6B9D;
+  background: #FF69B4;
   border-radius: 50%;
   display: flex;
   align-items: center;

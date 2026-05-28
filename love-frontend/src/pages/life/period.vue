@@ -261,7 +261,7 @@ const goAdd = () => {
 
 <style scoped>
 .period-page {
-  background: #f5f5f5;
+  background: #FFF5F9;
   min-height: 100vh;
   padding-bottom: 30rpx;
 }
@@ -279,7 +279,7 @@ const goAdd = () => {
 }
 .nav-btn {
   font-size: 40rpx;
-  color: #FF6B9D;
+  color: #FF69B4;
   padding: 10rpx 20rpx;
 }
 .month-title {
@@ -316,7 +316,7 @@ const goAdd = () => {
   color: #ccc;
 }
 .today .day-text {
-  color: #FF6B9D;
+  color: #FF69B4;
   font-weight: bold;
 }
 .period {
@@ -326,7 +326,7 @@ const goAdd = () => {
 .predicted-period {
   background: rgba(255, 107, 157, 0.1);
   border-radius: 50%;
-  border: 1rpx dashed #FF6B9D;
+  border: 1rpx dashed #FF69B4;
 }
 .ovulation {
   background: rgba(255, 165, 0, 0.2);
@@ -336,7 +336,7 @@ const goAdd = () => {
   width: 8rpx;
   height: 8rpx;
   border-radius: 50%;
-  background: #FF6B9D;
+  background: #FF69B4;
   position: absolute;
   bottom: 8rpx;
 }
@@ -369,7 +369,7 @@ const goAdd = () => {
 }
 .legend-dot.predicted {
   background: rgba(255, 107, 157, 0.2);
-  border: 1rpx dashed #FF6B9D;
+  border: 1rpx dashed #FF69B4;
 }
 .legend-dot.ovulation {
   background: rgba(255, 165, 0, 0.4);
@@ -389,7 +389,7 @@ const goAdd = () => {
   display: flex;
   justify-content: space-between;
   padding: 12rpx 0;
-  border-bottom: 1rpx solid #f5f5f5;
+  border-bottom: 1rpx solid #FFF5F9;
 }
 .info-label {
   color: #666;
@@ -399,7 +399,7 @@ const goAdd = () => {
   font-size: 28rpx;
 }
 .info-value.highlight {
-  color: #FF6B9D;
+  color: #FF69B4;
   font-weight: bold;
 }
 .record-section {
@@ -419,7 +419,7 @@ const goAdd = () => {
   font-weight: bold;
 }
 .add-btn {
-  background: #FF6B9D;
+  background: #FF69B4;
   color: #fff;
   padding: 10rpx 24rpx;
   border-radius: 30rpx;
@@ -429,13 +429,13 @@ const goAdd = () => {
   display: flex;
   justify-content: space-between;
   padding: 16rpx 0;
-  border-bottom: 1rpx solid #f5f5f5;
+  border-bottom: 1rpx solid #FFF5F9;
 }
 .record-date {
   font-size: 28rpx;
 }
 .record-duration {
-  color: #FF6B9D;
+  color: #FF69B4;
   font-size: 26rpx;
 }
 .empty {

@@ -104,7 +104,7 @@ onShow(() => {
 <style lang="scss" scoped>
 .anniversary-container {
   min-height: 100vh;
-  background: #f8f8f8;
+  background: #FFF5F9;
   padding: 20rpx;
   padding-bottom: 140rpx;
 }
@@ -115,7 +115,7 @@ onShow(() => {
   bottom: 120rpx;
   width: 100rpx;
   height: 100rpx;
-  background: #FF6B9D;
+  background: #FF69B4;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -179,7 +179,7 @@ onShow(() => {
 .days-badge {
   width: 120rpx;
   height: 120rpx;
-  background: #FFE8F0;
+  background: #FFE4EC;
   border-radius: 16rpx;
   display: flex;
   flex-direction: column;
@@ -187,7 +187,7 @@ onShow(() => {
   justify-content: center;
 
   &.is-today {
-    background: #FF6B9D;
+    background: #FF69B4;
     .days-text {
       color: #FFFFFF;
     }
@@ -197,7 +197,7 @@ onShow(() => {
 .days-number {
   font-size: 40rpx;
   font-weight: bold;
-  color: #FF6B9D;
+  color: #FF69B4;
 
   &.expired {
     font-size: 24rpx;
@@ -208,12 +208,12 @@ onShow(() => {
 .days-text {
   font-size: 28rpx;
   font-weight: bold;
-  color: #FF6B9D;
+  color: #FF69B4;
 }
 
 .days-label {
   font-size: 20rpx;
-  color: #FF6B9D;
+  color: #FF69B4;
   margin-top: 4rpx;
 }
 
@@ -238,11 +238,11 @@ onShow(() => {
 
 .type-tag {
   display: inline-block;
-  background: #FFE8F0;
+  background: #FFE4EC;
   padding: 4rpx 12rpx;
   border-radius: 8rpx;
   font-size: 20rpx;
-  color: #FF6B9D;
+  color: #FF69B4;
 }
 
 .card-right {

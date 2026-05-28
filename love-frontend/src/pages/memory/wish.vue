@@ -54,7 +54,7 @@
 
         <view v-if="currentTab === 'pending'" class="card-action">
           <view class="complete-btn" @click="handleComplete(item.id)">
-            <uni-icons type="checkmarkempty" size="20" color="#FF6B9D"></uni-icons>
+            <uni-icons type="checkmarkempty" size="20" color="#FF69B4"></uni-icons>
           </view>
           <view class="delete-btn" @click="handleDelete(item.id)">
             <uni-icons type="trash" size="18" color="#999"></uni-icons>
@@ -168,7 +168,7 @@ onShow(() => {
 <style lang="scss" scoped>
 .wish-container {
   min-height: 100vh;
-  background: #f8f8f8;
+  background: #FFF5F9;
   padding-bottom: 140rpx;
 }
 
@@ -178,7 +178,7 @@ onShow(() => {
   bottom: 120rpx;
   width: 100rpx;
   height: 100rpx;
-  background: #FF6B9D;
+  background: #FF69B4;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -200,14 +200,14 @@ onShow(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f5f5f5;
+  background: #FFF5F9;
   border-radius: 36rpx;
   font-size: 28rpx;
   color: #666666;
 
   &.active {
-    background: #FFE8F0;
-    color: #FF6B9D;
+    background: #FFE4EC;
+    color: #FF69B4;
   }
 }
 
@@ -269,11 +269,11 @@ onShow(() => {
 
 .type-tag {
   display: inline-block;
-  background: #FFE8F0;
+  background: #FFE4EC;
   padding: 4rpx 12rpx;
   border-radius: 8rpx;
   font-size: 20rpx;
-  color: #FF6B9D;
+  color: #FF69B4;
 }
 
 .complete-time {
@@ -283,13 +283,13 @@ onShow(() => {
 
 .card-action {
   padding: 24rpx;
-  border-left: 1rpx solid #f5f5f5;
+  border-left: 1rpx solid #FFF5F9;
 }
 
 .complete-btn {
   width: 64rpx;
   height: 64rpx;
-  border: 2rpx solid #FF6B9D;
+  border: 2rpx solid #FF69B4;
   border-radius: 50%;
   display: flex;
   align-items: center;

@@ -80,7 +80,7 @@ function switchTab(index) {
   }
 
   &.active .tab-text {
-    color: #FF6B9D;
+    color: #FF69B4;
     font-weight: 600;
   }
 }

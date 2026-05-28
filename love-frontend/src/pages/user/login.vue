@@ -1,9 +1,17 @@
 <template>
   <view class="login-container">
+    <!-- Hello Kitty 装饰元素 -->
+    <view class="deco-bow deco-bow-1"></view>
+    <view class="deco-bow deco-bow-2"></view>
+    <view class="deco-heart deco-heart-1">♡</view>
+    <view class="deco-heart deco-heart-2">♡</view>
+    <view class="deco-star deco-star-1">✦</view>
+    <view class="deco-star deco-star-2">✧</view>
+
     <!-- 顶部Logo区域 -->
     <view class="logo-area">
       <image class="logo" src="/static/logo.png" mode="aspectFit"></image>
-      <text class="title">心动日常</text>
+      <text class="title">🎀 心动日常</text>
       <text class="subtitle">记录我们的每一天</text>
     </view>
 
@@ -109,11 +117,47 @@ function goRegister() {
 <style lang="scss" scoped>
 .login-container {
   min-height: 100vh;
-  background: linear-gradient(180deg, #FFE8F0 0%, #FFFFFF 100%);
+  background: linear-gradient(180deg, #FFE4EC 0%, #FFFFFF 100%);
   padding: 0 40rpx;
   display: flex;
   flex-direction: column;
+  position: relative;
+  overflow: hidden;
 }
+.deco-bow {
+  position: absolute;
+  width: 40rpx;
+  height: 20rpx;
+  opacity: 0.15;
+  &::before, &::after {
+    content: '';
+    position: absolute;
+    width: 18rpx;
+    height: 18rpx;
+    background: #FF69B4;
+    border-radius: 50% 50% 50% 0;
+  }
+  &::before { left: 0; transform: rotate(-45deg); }
+  &::after { right: 0; transform: rotate(45deg); }
+}
+.deco-bow-1 { top: 60rpx; left: 60rpx; transform: rotate(-15deg); }
+.deco-bow-2 { top: 200rpx; right: 80rpx; transform: rotate(20deg); }
+.deco-heart {
+  position: absolute;
+  font-size: 32rpx;
+  color: #FF69B4;
+  opacity: 0.12;
+}
+.deco-heart-1 { top: 160rpx; right: 120rpx; }
+.deco-heart-2 { bottom: 300rpx; left: 80rpx; font-size: 24rpx; }
+.deco-star {
+  position: absolute;
+  font-size: 20rpx;
+  color: #FF69B4;
+  opacity: 0.15;
+}
+.deco-star-1 { top: 120rpx; left: 200rpx; }
+.deco-star-2 { bottom: 400rpx; right: 100rpx; font-size: 16rpx; }
 
 .logo-area {
   display: flex;
@@ -131,7 +175,7 @@ function goRegister() {
   .title {
     font-size: 48rpx;
     font-weight: bold;
-    color: #FF6B9D;
+    color: #FF69B4;
     margin-bottom: 12rpx;
   }
 
@@ -165,7 +209,7 @@ function goRegister() {
   width: 100%;
   height: 88rpx;
   line-height: 88rpx;
-  background: #FF6B9D;
+  background: #FF69B4;
   color: #FFFFFF;
   font-size: 32rpx;
   border-radius: 16rpx;
@@ -186,7 +230,7 @@ function goRegister() {
   color: #666666;
 
   .link {
-    color: #FF6B9D;
+    color: #FF69B4;
     margin-left: 8rpx;
   }
 }

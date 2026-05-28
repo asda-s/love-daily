@@ -132,7 +132,7 @@ const onDelete = async () => {
 
 <style scoped>
 .item-edit-page {
-  background: #f5f5f5;
+  background: #FFF5F9;
   min-height: 100vh;
   padding: 20rpx;
 }
@@ -145,7 +145,7 @@ const onDelete = async () => {
   display: flex;
   align-items: center;
   padding: 24rpx 0;
-  border-bottom: 1rpx solid #f5f5f5;
+  border-bottom: 1rpx solid #FFF5F9;
 }
 .label {
   width: 160rpx;
@@ -161,7 +161,7 @@ const onDelete = async () => {
   margin-top: 40rpx;
 }
 .submit-btn {
-  background: #FF6B9D;
+  background: #FF69B4;
   color: #fff;
   text-align: center;
   padding: 24rpx;

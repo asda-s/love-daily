@@ -117,23 +117,23 @@ function deleteBill(item) {
 </script>
 
 <style scoped>
-.bill-page { background: #f5f5f5; min-height: 100vh; padding-bottom: 140rpx; }
+.bill-page { background: #FFF5F9; min-height: 100vh; padding-bottom: 140rpx; }
 .month-header { display: flex; align-items: center; justify-content: center; gap: 30rpx; padding: 24rpx; background: #fff; }
-.nav-btn { font-size: 40rpx; color: #FF6B9D; padding: 10rpx 20rpx; }
+.nav-btn { font-size: 40rpx; color: #FF69B4; padding: 10rpx 20rpx; }
 .month-title { font-size: 32rpx; font-weight: bold; }
 .summary-card { background: #fff; margin: 20rpx; border-radius: 16rpx; padding: 30rpx; }
 .summary-row { display: flex; }
 .summary-item { flex: 1; text-align: center; }
 .summary-label { font-size: 24rpx; color: #999; display: block; margin-bottom: 8rpx; }
 .summary-value { font-size: 30rpx; font-weight: bold; }
-.summary-value.highlight { color: #FF6B9D; }
+.summary-value.highlight { color: #FF69B4; }
 .bill-list { padding: 0 20rpx; height: calc(100vh - 340rpx); }
 .bill-item { display: flex; justify-content: space-between; align-items: center; background: #fff; border-radius: 12rpx; padding: 24rpx; margin-bottom: 12rpx; }
 .bill-left { display: flex; align-items: center; gap: 16rpx; }
 .bill-type-tag { background: #f0f0f0; padding: 6rpx 14rpx; border-radius: 8rpx; font-size: 22rpx; color: #666; }
 .bill-payer { font-size: 26rpx; display: block; }
 .bill-note { font-size: 22rpx; color: #999; }
-.bill-amount { font-size: 30rpx; font-weight: bold; color: #FF6B9D; display: block; text-align: right; }
+.bill-amount { font-size: 30rpx; font-weight: bold; color: #FF69B4; display: block; text-align: right; }
 .bill-date { font-size: 22rpx; color: #999; }
 .bill-delete { font-size: 22rpx; color: #ff4d4f; margin-top: 8rpx; display: block; text-align: right; }
 .empty { text-align: center; padding: 80rpx 40rpx; color: #999; }
@@ -141,6 +141,6 @@ function deleteBill(item) {
 .empty-text { font-size: 30rpx; color: #666; display: block; margin-bottom: 12rpx; }
 .empty-hint { font-size: 24rpx; color: #bbb; display: block; }
 .bottom-btns { position: fixed; bottom: 110rpx; left: 0; right: 0; display: flex; gap: 16rpx; padding: 20rpx; background: #fff; z-index: 100; }
-.btn { flex: 1; text-align: center; padding: 24rpx; background: #FF6B9D; color: #fff; border-radius: 40rpx; font-size: 28rpx; }
-.btn.secondary { background: #f5f5f5; color: #666; }
+.btn { flex: 1; text-align: center; padding: 24rpx; background: #FF69B4; color: #fff; border-radius: 40rpx; font-size: 28rpx; }
+.btn.secondary { background: #FFF5F9; color: #666; }
 </style>

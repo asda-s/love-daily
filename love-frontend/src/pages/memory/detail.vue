@@ -41,7 +41,7 @@
           <text>编辑</text>
         </view>
         <view class="action-btn delete" @click="handleDelete">
-          <uni-icons type="trash" size="18" color="#FF6B9D"></uni-icons>
+          <uni-icons type="trash" size="18" color="#FF69B4"></uni-icons>
           <text>删除</text>
         </view>
       </view>
@@ -138,7 +138,7 @@ onMounted(() => {
 <style lang="scss" scoped>
 .detail-container {
   min-height: 100vh;
-  background: #f8f8f8;
+  background: #FFF5F9;
   padding: 20rpx;
 }
 
@@ -151,7 +151,7 @@ onMounted(() => {
 
 .user-section {
   padding: 24rpx;
-  border-bottom: 1rpx solid #f5f5f5;
+  border-bottom: 1rpx solid #FFF5F9;
 }
 
 .user-info {
@@ -216,7 +216,7 @@ onMounted(() => {
   display: flex;
   justify-content: flex-end;
   padding: 20rpx 24rpx;
-  border-top: 1rpx solid #f5f5f5;
+  border-top: 1rpx solid #FFF5F9;
 }
 
 .action-btn {
@@ -231,7 +231,7 @@ onMounted(() => {
   }
 
   &.delete {
-    color: #FF6B9D;
+    color: #FF69B4;
   }
 }
 

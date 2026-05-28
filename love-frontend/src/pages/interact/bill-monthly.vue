@@ -60,15 +60,15 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.bill-monthly-page { background: #f5f5f5; min-height: 100vh; }
-.summary-header { background: linear-gradient(135deg, #FF6B9D, #FF8E53); padding: 40rpx; text-align: center; }
+.bill-monthly-page { background: #FFF5F9; min-height: 100vh; }
+.summary-header { background: linear-gradient(135deg, #FF69B4, #FF8FB1); padding: 40rpx; text-align: center; }
 .summary-title { color: #fff; font-size: 30rpx; }
 .summary-card { background: #fff; margin: 20rpx; border-radius: 16rpx; padding: 30rpx; }
 .total-section { text-align: center; margin-bottom: 30rpx; }
 .total-label { font-size: 26rpx; color: #999; display: block; margin-bottom: 10rpx; }
-.total-value { font-size: 56rpx; font-weight: bold; color: #FF6B9D; }
+.total-value { font-size: 56rpx; font-weight: bold; color: #FF69B4; }
 .detail-row { display: flex; }
-.detail-item { flex: 1; text-align: center; padding: 20rpx 0; background: #f8f8f8; border-radius: 12rpx; margin: 0 10rpx; }
+.detail-item { flex: 1; text-align: center; padding: 20rpx 0; background: #FFF5F9; border-radius: 12rpx; margin: 0 10rpx; }
 .detail-label { font-size: 24rpx; color: #999; display: block; }
 .detail-value { font-size: 30rpx; font-weight: bold; }
 .type-breakdown { background: #fff; margin: 20rpx; border-radius: 16rpx; padding: 30rpx; }
@@ -77,6 +77,6 @@ onMounted(async () => {
 .type-left { flex: 1; margin-right: 20rpx; }
 .type-name { font-size: 26rpx; color: #666; margin-bottom: 8rpx; display: block; }
 .type-bar { height: 12rpx; background: #f0f0f0; border-radius: 6rpx; overflow: hidden; }
-.type-bar-fill { height: 100%; background: #FF6B9D; border-radius: 6rpx; }
+.type-bar-fill { height: 100%; background: #FF69B4; border-radius: 6rpx; }
 .type-amount { font-size: 28rpx; font-weight: bold; color: #333; }
 </style>

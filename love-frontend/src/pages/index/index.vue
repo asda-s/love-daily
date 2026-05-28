@@ -23,8 +23,9 @@
     </view>
 
     <view class="header">
+      <view class="header-deco-bow"></view>
       <view class="header-left">
-        <text class="app-title">💕 心动日常</text>
+        <text class="app-title">🎀 心动日常</text>
       </view>
       <view class="header-right" @click="goProfile">
         <image class="header-avatar" :src="userStore.userInfo?.avatar || '/static/default-avatar.png'" mode="aspectFill" />
@@ -34,7 +35,7 @@
     <view class="couple-card" v-if="userStore.isBindLover" @click="goProfile">
       <view class="couple-avatars">
         <image class="avatar" :src="userStore.userInfo?.avatar || '/static/default-avatar.png'" mode="aspectFill" />
-        <text class="heart-icon">💕</text>
+        <text class="heart-icon">🎀</text>
         <image class="avatar" :src="userStore.loverInfo?.avatar || '/static/default-avatar.png'" mode="aspectFill" />
       </view>
       <view class="couple-names">
@@ -81,7 +82,7 @@
 
     <view class="module-section">
       <view class="section-header">
-        <text class="section-icon">📖</text>
+        <text class="section-icon">🎀</text>
         <text class="section-title">时光档案馆</text>
       </view>
       <view class="module-grid">
@@ -113,7 +114,7 @@
 
     <view class="module-section">
       <view class="section-header">
-        <text class="section-icon">🏠</text>
+        <text class="section-icon">🩷</text>
         <text class="section-title">生活管家</text>
       </view>
       <view class="module-grid">
@@ -142,7 +143,7 @@
 
     <view class="module-section">
       <view class="section-header">
-        <text class="section-icon">🎮</text>
+        <text class="section-icon">💖</text>
         <text class="section-title">互动与陪伴</text>
       </view>
       <view class="module-grid">
@@ -171,7 +172,7 @@
 
     <view class="module-section">
       <view class="section-header">
-        <text class="section-icon">🌱</text>
+        <text class="section-icon">💝</text>
         <text class="section-title">恋爱养成</text>
       </view>
       <view class="love-card" @click="go('/pages/love/index')">
@@ -332,18 +333,38 @@ function goProfile() {
 <style lang="scss" scoped>
 .index-container {
   min-height: 100vh;
-  background: #FFF5F8;
+  background: #FFF5F9;
   padding-bottom: 140rpx;
 }
 
 .header {
-  background: linear-gradient(135deg, #FF6B9D, #FF8E8E);
+  background: linear-gradient(135deg, #FF69B4, #FF8FB1);
   padding: 60rpx 30rpx 30rpx;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  position: relative;
+  overflow: hidden;
   .app-title { font-size: 38rpx; font-weight: bold; color: #fff; }
   .header-avatar { width: 68rpx; height: 68rpx; border-radius: 50%; border: 3rpx solid #fff; }
+}
+.header-deco-bow {
+  position: absolute;
+  top: -20rpx;
+  right: 80rpx;
+  width: 80rpx;
+  height: 40rpx;
+  &::before, &::after {
+    content: '';
+    position: absolute;
+    width: 36rpx;
+    height: 36rpx;
+    background: rgba(255,255,255,0.2);
+    border-radius: 50% 50% 50% 0;
+    top: 0;
+  }
+  &::before { left: 0; transform: rotate(-45deg); }
+  &::after { right: 0; transform: rotate(45deg); }
 }
 
 .couple-card {
@@ -369,18 +390,18 @@ function goProfile() {
     gap: 16rpx;
     margin-top: 16rpx;
     font-size: 30rpx; color: #333; font-weight: 600;
-    .amp { color: #FF6B9D; font-size: 36rpx; }
+    .amp { color: #FF69B4; font-size: 36rpx; }
   }
   .together-days {
     margin-top: 16rpx;
     display: flex; align-items: baseline; gap: 6rpx;
-    .days-number { font-size: 56rpx; font-weight: bold; color: #FF6B9D; }
+    .days-number { font-size: 56rpx; font-weight: bold; color: #FF69B4; }
     .days-label { font-size: 24rpx; color: #999; }
   }
   .single-emoji { font-size: 64rpx; }
   .single-text { font-size: 28rpx; color: #666; margin: 16rpx 0; }
   .bind-btn {
-    background: linear-gradient(135deg, #FF6B9D, #FF8E8E);
+    background: linear-gradient(135deg, #FF69B4, #FF8FB1);
     color: #fff; font-size: 28rpx; padding: 16rpx 48rpx;
     border-radius: 36rpx; margin-top: 8rpx;
   }
@@ -399,7 +420,7 @@ function goProfile() {
       display: flex;
       flex-direction: column;
       align-items: center;
-      .stats-value { font-size: 36rpx; font-weight: bold; color: #FF6B9D; }
+      .stats-value { font-size: 36rpx; font-weight: bold; color: #FF69B4; }
       .stats-label { font-size: 22rpx; color: #999; margin-top: 6rpx; }
     }
   }
@@ -408,7 +429,7 @@ function goProfile() {
     justify-content: space-between;
     margin-top: 20rpx;
     padding-top: 20rpx;
-    border-top: 1rpx solid #f5f5f5;
+    border-top: 1rpx solid #FFF5F9;
     .stats-expense { font-size: 24rpx; color: #666; }
     .stats-anniversary { font-size: 24rpx; color: #999; }
   }
@@ -440,9 +461,9 @@ function goProfile() {
     align-items: center;
     padding: 20rpx 0;
     border-radius: 16rpx;
-    background: #FFF9FB;
+    background: #FFF5F9;
     transition: all 0.2s;
-    &:active { background: #FFE8F0; transform: scale(0.95); }
+    &:active { background: #FFE4EC; transform: scale(0.95); }
     .module-emoji { font-size: 48rpx; margin-bottom: 8rpx; }
     .emoji-wrap { position: relative; margin-bottom: 8rpx; }
     .badge {
@@ -468,7 +489,7 @@ function goProfile() {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: linear-gradient(135deg, #FF6B9D, #FF8E8E);
+  background: linear-gradient(135deg, #FF69B4, #FF8FB1);
   border-radius: 20rpx;
   padding: 30rpx;
   margin-bottom: 20rpx;
@@ -521,13 +542,13 @@ function goProfile() {
   padding: 48rpx 40rpx;
   .dialog-title { font-size: 36rpx; font-weight: bold; color: #333; text-align: center; margin-bottom: 36rpx; }
   .my-code-section {
-    background: #FFF5F8; border-radius: 16rpx; padding: 24rpx; margin-bottom: 24rpx;
+    background: #FFF5F9; border-radius: 16rpx; padding: 24rpx; margin-bottom: 24rpx;
     .my-code-label { font-size: 24rpx; color: #999; display: block; margin-bottom: 12rpx; }
     .my-code-row {
       display: flex; align-items: center; justify-content: space-between;
-      .my-code-text { font-size: 40rpx; font-weight: bold; color: #FF6B9D; letter-spacing: 8rpx; }
+      .my-code-text { font-size: 40rpx; font-weight: bold; color: #FF69B4; letter-spacing: 8rpx; }
       .copy-btn {
-        font-size: 24rpx; color: #FF6B9D; border: 2rpx solid #FF6B9D;
+        font-size: 24rpx; color: #FF69B4; border: 2rpx solid #FF69B4;
         padding: 6rpx 20rpx; border-radius: 24rpx;
       }
     }
@@ -552,12 +573,12 @@ function goProfile() {
     display: flex; gap: 24rpx;
     .btn-skip {
       flex: 1; text-align: center; padding: 20rpx; border-radius: 36rpx;
-      font-size: 28rpx; color: #999; background: #f5f5f5;
+      font-size: 28rpx; color: #999; background: #FFF5F9;
     }
     .btn-bind {
       flex: 1; text-align: center; padding: 20rpx; border-radius: 36rpx;
       font-size: 28rpx; color: #fff;
-      background: linear-gradient(135deg, #FF6B9D, #FF8E8E);
+      background: linear-gradient(135deg, #FF69B4, #FF8FB1);
     }
   }
 }

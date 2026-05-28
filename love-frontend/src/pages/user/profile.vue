@@ -1,7 +1,9 @@
 <template>
   <view class="profile-page">
     <view class="profile-header">
-      <view class="header-bg"></view>
+      <view class="header-bg">
+        <view class="header-deco-bow"></view>
+      </view>
       <view class="user-card">
         <view class="avatar-wrap" @click="changeAvatar">
           <image class="avatar" :src="userInfo.avatar || '/static/default-avatar.png'" mode="aspectFill" />
@@ -321,7 +323,7 @@ function handleLogout() {
 <style lang="scss" scoped>
 .profile-page {
   min-height: 100vh;
-  background: #f5f5f5;
+  background: #FFF5F9;
   padding-bottom: 120rpx;
 }
 .profile-header {
@@ -330,7 +332,26 @@ function handleLogout() {
 }
 .header-bg {
   height: 280rpx;
-  background: linear-gradient(135deg, #FF6B9D, #FF8FB1);
+  background: linear-gradient(135deg, #FF69B4, #FF8FB1);
+  position: relative;
+  overflow: hidden;
+}
+.header-deco-bow {
+  position: absolute;
+  top: 30rpx;
+  right: 40rpx;
+  width: 60rpx;
+  height: 30rpx;
+  &::before, &::after {
+    content: '';
+    position: absolute;
+    width: 28rpx;
+    height: 28rpx;
+    background: rgba(255,255,255,0.2);
+    border-radius: 50% 50% 50% 0;
+  }
+  &::before { left: 0; transform: rotate(-45deg); }
+  &::after { right: 0; transform: rotate(45deg); }
 }
 .user-card {
   display: flex;
@@ -420,7 +441,7 @@ function handleLogout() {
   display: block;
   font-size: 40rpx;
   font-weight: bold;
-  color: #FF6B9D;
+  color: #FF69B4;
 }
 .stat-label {
   display: block;
@@ -453,19 +474,19 @@ function handleLogout() {
   align-items: center;
   justify-content: space-between;
   background: #fff5f7;
-  border: 2rpx dashed #FF6B9D;
+  border: 2rpx dashed #FF69B4;
   border-radius: 16rpx;
   padding: 24rpx;
 }
 .code-text {
   font-size: 44rpx;
   font-weight: bold;
-  color: #FF6B9D;
+  color: #FF69B4;
   letter-spacing: 10rpx;
 }
 .code-copy {
   font-size: 24rpx;
-  color: #FF6B9D;
+  color: #FF69B4;
   background: rgba(255,107,157,0.15);
   padding: 8rpx 24rpx;
   border-radius: 30rpx;
@@ -481,7 +502,7 @@ function handleLogout() {
 .love-level {
   font-size: 36rpx;
   font-weight: bold;
-  color: #FF6B9D;
+  color: #FF69B4;
 }
 .love-points {
   font-size: 24rpx;
@@ -495,7 +516,7 @@ function handleLogout() {
 }
 .love-fill {
   height: 100%;
-  background: linear-gradient(90deg, #FF6B9D, #FF8FB1);
+  background: linear-gradient(90deg, #FF69B4, #FF8FB1);
   border-radius: 8rpx;
   transition: width 0.3s;
 }
@@ -509,8 +530,8 @@ function handleLogout() {
   display: flex;
   justify-content: space-around;
   padding: 20rpx 0;
-  border-top: 1rpx solid #f5f5f5;
-  border-bottom: 1rpx solid #f5f5f5;
+  border-top: 1rpx solid #FFF5F9;
+  border-bottom: 1rpx solid #FFF5F9;
 }
 .love-action-item {
   display: flex;
@@ -534,13 +555,13 @@ function handleLogout() {
 }
 .guide-icon { font-size: 32rpx; margin-right: 16rpx; }
 .guide-text { flex: 1; font-size: 26rpx; color: #666; }
-.guide-pts { font-size: 26rpx; color: #FF6B9D; font-weight: bold; }
+.guide-pts { font-size: 26rpx; color: #FF69B4; font-weight: bold; }
 .menu-card {}
 .menu-item {
   display: flex;
   align-items: center;
   padding: 28rpx 0;
-  border-bottom: 1rpx solid #f5f5f5;
+  border-bottom: 1rpx solid #FFF5F9;
 }
 .menu-item:last-child { border-bottom: none; }
 .menu-icon { font-size: 36rpx; margin-right: 20rpx; }
@@ -599,11 +620,11 @@ function handleLogout() {
   font-size: 28rpx;
 }
 .dialog-btn.cancel {
-  background: #f5f5f5;
+  background: #FFF5F9;
   color: #666;
 }
 .dialog-btn.confirm {
-  background: #FF6B9D;
+  background: #FF69B4;
   color: #fff;
 }
 </style>
