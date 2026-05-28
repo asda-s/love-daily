@@ -16,6 +16,8 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
 // 请求队列，用于控制loading显示
 let requestCount = 0
 
+let loadingTimer = null
+
 /**
  * 显示加载提示
  */
@@ -25,6 +27,13 @@ function showLoading() {
       title: '加载中...',
       mask: true
     })
+    // 5秒后更新提示，可能是服务器冷启动
+    loadingTimer = setTimeout(() => {
+      uni.showLoading({
+        title: '服务器启动中，请稍候...',
+        mask: true
+      })
+    }, 5000)
   }
   requestCount++
 }
@@ -36,6 +45,10 @@ function hideLoading() {
   requestCount--
   if (requestCount <= 0) {
     requestCount = 0
+    if (loadingTimer) {
+      clearTimeout(loadingTimer)
+      loadingTimer = null
+    }
     uni.hideLoading()
   }
 }
@@ -125,7 +138,7 @@ function request(options = {}) {
         if (useLoading) {
           hideLoading()
         }
-        const msg = err.errMsg?.includes('timeout') ? '请求超时，请检查网络' : '网络连接失败'
+        const msg = err.errMsg?.includes('timeout') ? '服务器响应超时，可能正在重启，请稍后再试' : '网络连接失败，请检查网络'
         if (showError) uni.showToast({ title: msg, icon: 'none' })
         reject(err)
       }
