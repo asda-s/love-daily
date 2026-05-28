@@ -104,7 +104,7 @@ onShow(() => {
 <style lang="scss" scoped>
 .anniversary-container {
   min-height: 100vh;
-  background: transparent;
+  background: #FFF5F9;
   padding: 20rpx;
   padding-bottom: 140rpx;
 }

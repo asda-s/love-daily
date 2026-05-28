@@ -39,11 +39,15 @@ Base.metadata.create_all(bind=engine)
 try:
     with engine.connect() as conn:
         from sqlalchemy import text
-        conn.execute(text("ALTER TABLE users ADD COLUMN bind_time DATETIME DEFAULT NULL"))
+        db_type = engine.url.drivername
+        if 'postgresql' in db_type:
+            conn.execute(text("DO $$ BEGIN ALTER TABLE users ADD COLUMN bind_time TIMESTAMP DEFAULT NULL; EXCEPTION WHEN duplicate_column THEN NULL; END $$"))
+        else:
+            conn.execute(text("ALTER TABLE users ADD COLUMN bind_time DATETIME DEFAULT NULL"))
         conn.commit()
         logger.info("迁移: 添加 bind_time 列")
-except Exception:
-    pass  # 列已存在，忽略
+except Exception as e:
+    logger.warning(f"迁移跳过（列可能已存在）: {str(e)}")
 
 # 限流器
 limiter = Limiter(key_func=get_remote_address, default_limits=["200/minute"])
@@ -87,7 +91,7 @@ async def app_exception_handler(request: Request, exc: AppException):
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    logger.error(f"服务器内部错误: {exc}", exc_info=True)
+    logger.error("服务器内部错误: {}", str(exc), exc_info=True)
     return JSONResponse(
         status_code=500,
         content=error_response(500, "服务器内部错误，请稍后重试")

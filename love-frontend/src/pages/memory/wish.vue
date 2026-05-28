@@ -168,7 +168,7 @@ onShow(() => {
 <style lang="scss" scoped>
 .wish-container {
   min-height: 100vh;
-  background: transparent;
+  background: #FFF5F9;
   padding-bottom: 140rpx;
 }
 

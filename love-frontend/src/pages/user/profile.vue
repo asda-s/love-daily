@@ -324,7 +324,7 @@ function handleLogout() {
 <style lang="scss" scoped>
 .profile-page {
   min-height: 100vh;
-  background: transparent;
+  background: #FFF5F9;
   padding-bottom: 120rpx;
 }
 .profile-header {

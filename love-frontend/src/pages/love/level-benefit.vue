@@ -40,7 +40,7 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.level-benefit-page { background: transparent; min-height: 100vh; padding: 20rpx; }
+.level-benefit-page { background: #FFF5F9; min-height: 100vh; padding: 20rpx; }
 .level-card { display: flex; align-items: center; background: #fff; border-radius: 16rpx; padding: 24rpx; margin-bottom: 16rpx; opacity: 0.5; }
 .level-card.reached { opacity: 1; }
 .level-card.current { border: 2rpx solid #FF69B4; opacity: 1; }

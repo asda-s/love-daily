@@ -60,7 +60,7 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.bill-monthly-page { background: transparent; min-height: 100vh; }
+.bill-monthly-page { background: #FFF5F9; min-height: 100vh; }
 .summary-header { background: linear-gradient(135deg, #FF69B4, #FF8FB1); padding: 40rpx; text-align: center; }
 .summary-title { color: #fff; font-size: 30rpx; }
 .summary-card { background: #fff; margin: 20rpx; border-radius: 16rpx; padding: 30rpx; }

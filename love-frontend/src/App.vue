@@ -43,10 +43,6 @@ export default {
 /* 全局样式 - Hello Kitty 主题 */
 page {
   background-color: #FFF5F9;
-  background-image: url('/static/bg.jpg');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
   font-size: 28rpx;
   color: #333333;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;

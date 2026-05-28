@@ -63,7 +63,7 @@ const goPublish = () => {
 </script>
 
 <style scoped>
-.emotion-page { background: transparent; min-height: 100vh; padding: 20rpx; padding-bottom: 120rpx; }
+.emotion-page { background: #FFF5F9; min-height: 100vh; padding: 20rpx; padding-bottom: 120rpx; }
 .emotion-card { background: #fff; border-radius: 16rpx; padding: 24rpx; margin-bottom: 16rpx; }
 .emotion-card.happy { border-left: 6rpx solid #FFD700; }
 .emotion-card.sad { border-left: 6rpx solid #6495ED; }

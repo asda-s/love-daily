@@ -144,7 +144,7 @@ onShow(() => {
 <style lang="scss" scoped>
 .whisper-container {
   min-height: 100vh;
-  background: transparent;
+  background: #FFF5F9;
   position: relative;
 }
 

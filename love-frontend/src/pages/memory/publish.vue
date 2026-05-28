@@ -174,7 +174,7 @@ async function handleSubmit() {
 <style lang="scss" scoped>
 .publish-container {
   min-height: 100vh;
-  background: transparent;
+  background: #FFF5F9;
   padding-bottom: 40rpx;
 }
 

@@ -117,7 +117,7 @@ function deleteBill(item) {
 </script>
 
 <style scoped>
-.bill-page { background: transparent; min-height: 100vh; padding-bottom: 140rpx; }
+.bill-page { background: #FFF5F9; min-height: 100vh; padding-bottom: 140rpx; }
 .month-header { display: flex; align-items: center; justify-content: center; gap: 30rpx; padding: 24rpx; background: #fff; }
 .nav-btn { font-size: 40rpx; color: #FF69B4; padding: 10rpx 20rpx; }
 .month-title { font-size: 32rpx; font-weight: bold; }
