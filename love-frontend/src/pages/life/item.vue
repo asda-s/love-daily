@@ -92,10 +92,10 @@
               <view class="card-user-row">
                 <image
                   class="card-avatar"
-                  :src="item.user?.avatar || '/static/default-avatar.png'"
+                  :src="item.avatar || '/static/default-avatar.png'"
                   mode="aspectFill"
                 />
-                <text class="card-nickname">{{ item.user?.nickname || '匿名' }}</text>
+                <text class="card-nickname">{{ item.nickname || '匿名' }}</text>
                 <view
                   v-if="item.mood_intensity"
                   class="mood-intensity"
@@ -195,7 +195,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import { get, post, del } from '@/utils/request'
 import { useUserStore } from '@/store/user'
 
@@ -240,7 +241,7 @@ const noMore = ref(false)
 const reactionPickerVisible = ref(false)
 const reactionTargetItem = ref(null)
 
-onMounted(() => {
+onShow(() => {
   loadDiaryList(true)
 })
 
@@ -272,12 +273,14 @@ async function loadDiaryList(reset = false) {
     if (selectedMood.value) {
       params.mood_type = selectedMood.value
     }
-    if (selectedPublisher.value !== 'all') {
-      params.publisher = selectedPublisher.value
+    if (selectedPublisher.value === 'me') {
+      params.user_id = userStore.userInfo?.id
+    } else if (selectedPublisher.value === 'lover') {
+      params.user_id = userStore.loverInfo?.id
     }
     const res = await get('/life/diary', params, { useLoading: false })
     if (res && res.data) {
-      const items = res.data.items || []
+      const items = res.data.list || []
       total.value = res.data.total || 0
       if (reset) {
         diaryList.value = items
@@ -346,23 +349,21 @@ function getTags(item) {
 }
 
 function getExistingReactions(item) {
-  if (!item.reactions) return []
-  const result = []
+  if (!item.reactions || !Array.isArray(item.reactions)) return []
   const currentUserId = userStore.userInfo?.id
-  for (const [type, data] of Object.entries(item.reactions)) {
-    if (!REACTION_CONFIG[type]) continue
-    const count = typeof data === 'object' ? (data.count || 0) : 0
-    const users = typeof data === 'object' ? (data.users || []) : []
-    if (count > 0) {
-      result.push({
-        type,
-        emoji: REACTION_CONFIG[type].emoji,
-        count,
-        isMine: users.includes(currentUserId)
-      })
+  const grouped = {}
+  for (const r of item.reactions) {
+    if (!grouped[r.type]) {
+      grouped[r.type] = { type: r.type, count: 0, isMine: false }
+    }
+    grouped[r.type].count++
+    if (r.user_id === currentUserId) {
+      grouped[r.type].isMine = true
     }
   }
-  return result
+  return Object.values(grouped)
+    .filter(g => g.count > 0 && REACTION_CONFIG[g.type])
+    .map(g => ({ ...g, emoji: REACTION_CONFIG[g.type].emoji }))
 }
 
 function showReactionPicker(item) {
@@ -386,9 +387,7 @@ async function addReaction(reactionType) {
 
 async function toggleReaction(item, reactionType) {
   const currentUserId = userStore.userInfo?.id
-  const data = item.reactions?.[reactionType]
-  const users = typeof data === 'object' ? (data.users || []) : []
-  const isMine = users.includes(currentUserId)
+  const isMine = item.reactions?.some(r => r.type === reactionType && r.user_id === currentUserId)
 
   try {
     if (isMine) {

@@ -5,7 +5,7 @@
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_
+from sqlalchemy import and_, or_, func
 from datetime import datetime, date, timedelta
 from typing import Optional, List
 import json
@@ -734,8 +734,8 @@ async def mood_calendar(
 
     query = db.query(MoodDiary).filter(
         MoodDiary.publish_status == "published",
-        MoodDiary.created_at >= start,
-        MoodDiary.created_at < end
+        MoodDiary.diary_date >= start,
+        MoodDiary.diary_date < end
     )
     if current_user.lover_id:
         query = query.filter(or_(MoodDiary.user_id == current_user.id, MoodDiary.user_id == current_user.lover_id))
@@ -745,7 +745,7 @@ async def mood_calendar(
     diaries = query.all()
     calendar = {}
     for d in diaries:
-        day = d.created_at.day
+        day = d.diary_date.day
         if day not in calendar:
             calendar[day] = []
         calendar[day].append({
@@ -974,16 +974,37 @@ async def list_diaries(
     if end_date:
         query = query.filter(MoodDiary.created_at <= end_date)
 
-    total = query.count()
-    diaries = query.order_by(MoodDiary.created_at.desc()).offset((page - 1) * page_size).limit(page_size).all()
+    query = query.order_by(MoodDiary.created_at.desc())
+
+    if tag:
+        # Tag filter requires JSON parsing, so over-fetch and filter in Python
+        all_diaries = query.limit(500).all()
+        filtered = []
+        for d in all_diaries:
+            tags = json.loads(d.tags) if d.tags else []
+            if tag in tags:
+                filtered.append(d)
+        total = len(filtered)
+        diaries = filtered[(page - 1) * page_size: page * page_size]
+    else:
+        total = query.count()
+        diaries = query.offset((page - 1) * page_size).limit(page_size).all()
 
     user_ids = list(set(d.user_id for d in diaries))
     users_map = {u.id: u for u in db.query(User).filter(User.id.in_(user_ids)).all()} if user_ids else {}
 
-    # Get reactions for these diaries
+    # Batch query reactions for these diaries
     diary_ids = [d.id for d in diaries]
     reactions = db.query(MoodDiaryReaction).filter(MoodDiaryReaction.diary_id.in_(diary_ids)).all() if diary_ids else []
     reaction_users = {u.id: u for u in db.query(User).filter(User.id.in_(list(set(r.user_id for r in reactions)))).all()} if reactions else {}
+
+    # Batch query reply counts
+    reply_counts = {}
+    if diary_ids:
+        rows = db.query(MoodDiaryReply.diary_id, func.count(MoodDiaryReply.id)).filter(
+            MoodDiaryReply.diary_id.in_(diary_ids)
+        ).group_by(MoodDiaryReply.diary_id).all()
+        reply_counts = {r[0]: r[1] for r in rows}
 
     result = []
     for d in diaries:
@@ -999,12 +1020,6 @@ async def list_diaries(
             for r in diary_reactions
         ]
 
-        # Tag filter
-        if tag:
-            tags = json.loads(d.tags) if d.tags else []
-            if tag not in tags:
-                continue
-
         result.append({
             "id": d.id,
             "user_id": d.user_id,
@@ -1018,7 +1033,7 @@ async def list_diaries(
             "tags": json.loads(d.tags) if d.tags else [],
             "is_read": d.is_read,
             "reactions": reaction_list,
-            "reply_count": db.query(MoodDiaryReply).filter(MoodDiaryReply.diary_id == d.id).count(),
+            "reply_count": reply_counts.get(d.id, 0),
             "created_at": d.created_at.strftime("%Y-%m-%d %H:%M:%S") if d.created_at else None
         })
 

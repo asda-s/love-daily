@@ -21,8 +21,8 @@
           <text class="summary-value highlight">¥{{ summary.total }}</text>
         </view>
       </view>
-      <view v-if="summary.balance_desc" class="balance-row">
-        <text class="balance-text">{{ summary.balance_desc }}</text>
+      <view v-if="summary.aa?.balance_desc" class="balance-row">
+        <text class="balance-text">{{ summary.aa.balance_desc }}</text>
       </view>
     </view>
 

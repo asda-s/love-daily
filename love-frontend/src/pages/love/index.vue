@@ -24,7 +24,7 @@
         <view class="action-item" @click="go('achievement')">
           <text class="action-icon">🏆</text>
           <text class="action-name">我的成就</text>
-          <text class="action-desc">{{ overview.achievement_count || 0 }} 个已解锁</text>
+          <text class="action-desc">{{ overview.achievements_unlocked || 0 }} 个已解锁</text>
         </view>
         <view class="action-item" @click="go('level-benefit')">
           <text class="action-icon">🎁</text>

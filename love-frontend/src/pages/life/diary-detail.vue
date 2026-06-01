@@ -17,9 +17,9 @@
         </view>
         <view class="intensity-bar-wrap">
           <view class="intensity-bar-bg">
-            <view class="intensity-bar-fill" :style="{ width: (diary.mood_intensity || 0) + '%', background: moodColor }"></view>
+            <view class="intensity-bar-fill" :style="{ width: ((diary.mood_intensity || 0) * 20) + '%', background: moodColor }"></view>
           </view>
-          <text class="intensity-label">{{ diary.mood_intensity || 0 }}%</text>
+          <text class="intensity-label">{{ diary.mood_intensity || 0 }}/5</text>
         </view>
       </view>
     </view>
@@ -33,9 +33,9 @@
     <view class="content-card">
       <!-- Author info -->
       <view class="author-row">
-        <image class="author-avatar" :src="diary.user?.avatar || '/static/default-avatar.png'" mode="aspectFill" />
+        <image class="author-avatar" :src="diary.avatar || '/static/default-avatar.png'" mode="aspectFill" />
         <view class="author-info">
-          <text class="author-name">{{ diary.user?.nickname || '匿名' }}</text>
+          <text class="author-name">{{ diary.nickname || '匿名' }}</text>
           <text class="author-time">{{ formatTime(diary.created_at) }}</text>
         </view>
       </view>
@@ -87,9 +87,10 @@
 
       <!-- Reaction list -->
       <view class="reaction-list" v-if="diary.reactions && diary.reactions.length">
-        <view class="reaction-item" v-for="r in diary.reactions" :key="r.id">
-          <image class="reaction-avatar" :src="r.user?.avatar || '/static/default-avatar.png'" mode="aspectFill" />
-          <text class="reaction-user-emoji">{{ REACTION_CONFIG[r.reaction_type]?.emoji || '' }}</text>
+        <view class="reaction-item" v-for="r in diary.reactions" :key="r.user_id + '-' + r.type">
+          <image class="reaction-avatar" :src="r.avatar || '/static/default-avatar.png'" mode="aspectFill" />
+          <text class="reaction-nickname">{{ r.nickname }}</text>
+          <text class="reaction-user-emoji">{{ REACTION_CONFIG[r.type]?.emoji || '' }}</text>
         </view>
       </view>
     </view>
@@ -108,10 +109,10 @@
       <view class="reply-list">
         <view v-for="reply in rootReplies" :key="reply.id" class="reply-item">
           <view class="reply-main" @longpress="onLongPressReply(reply)">
-            <image class="reply-avatar" :src="reply.user?.avatar || '/static/default-avatar.png'" mode="aspectFill" />
+            <image class="reply-avatar" :src="reply.avatar || '/static/default-avatar.png'" mode="aspectFill" />
             <view class="reply-body">
               <view class="reply-header">
-                <text class="reply-name">{{ reply.user?.nickname || '匿名' }}</text>
+                <text class="reply-name">{{ reply.nickname || '匿名' }}</text>
                 <text class="reply-time">{{ formatTime(reply.created_at) }}</text>
               </view>
               <text class="reply-content">{{ reply.content }}</text>
@@ -124,10 +125,10 @@
           <!-- Children replies -->
           <view v-if="reply.children && reply.children.length" class="child-reply-list">
             <view v-for="child in reply.children" :key="child.id" class="reply-item child" @longpress="onLongPressReply(child)">
-              <image class="reply-avatar small" :src="child.user?.avatar || '/static/default-avatar.png'" mode="aspectFill" />
+              <image class="reply-avatar small" :src="child.avatar || '/static/default-avatar.png'" mode="aspectFill" />
               <view class="reply-body">
                 <view class="reply-header">
-                  <text class="reply-name">{{ child.user?.nickname || '匿名' }}</text>
+                  <text class="reply-name">{{ child.nickname || '匿名' }}</text>
                   <text class="reply-time">{{ formatTime(child.created_at) }}</text>
                 </view>
                 <text class="reply-content">{{ child.content }}</text>
@@ -147,14 +148,14 @@
     <!-- Reply input bar -->
     <view class="reply-input-bar">
       <view class="reply-target" v-if="replyTarget" @click="cancelReply">
-        <text class="reply-target-text">回复 {{ replyTarget.user?.nickname || '匿名' }}</text>
+        <text class="reply-target-text">回复 {{ replyTarget.nickname || '匿名' }}</text>
         <text class="reply-target-close">x</text>
       </view>
       <view class="input-row">
         <input
           class="reply-input"
           v-model="replyContent"
-          :placeholder="replyTarget ? '回复 ' + (replyTarget.user?.nickname || '匿名') + '...' : '写下你的留言...'"
+          :placeholder="replyTarget ? '回复 ' + (replyTarget.nickname || '匿名') + '...' : '写下你的留言...'"
           confirm-type="send"
           @confirm="submitReply"
         />
@@ -167,7 +168,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import { get, post, del } from '@/utils/request'
 import { useUserStore } from '@/store/user'
 import { getRelativeTime } from '@/utils/common'
@@ -209,10 +211,11 @@ const diary = ref({
   publish_status: 1,
   created_at: '',
   updated_at: '',
-  user: null,
-  reactions: [],
-  replies: []
+  nickname: '',
+  avatar: null,
+  reactions: []
 })
+const replies = ref([])
 const replyContent = ref('')
 const replyTarget = ref(null)
 
@@ -244,16 +247,19 @@ const tagList = computed(() => {
 })
 
 const rootReplies = computed(() => {
-  if (!diary.value.replies) return []
-  return diary.value.replies.filter(r => !r.parent_id)
+  return replies.value.filter(r => !r.parent_id).map(r => ({
+    ...r,
+    children: replies.value.filter(c => c.parent_id === r.id)
+  }))
 })
 
-onMounted(() => {
+onShow(() => {
   const pages = getCurrentPages()
   const page = pages[pages.length - 1]
   if (page.options && page.options.id) {
     diaryId.value = page.options.id
     loadDiary()
+    loadReplies()
   }
 })
 
@@ -269,6 +275,17 @@ async function loadDiary() {
   }
 }
 
+async function loadReplies() {
+  try {
+    const res = await get(`/life/diary/${diaryId.value}/replies`)
+    if (res && res.data) {
+      replies.value = Array.isArray(res.data) ? res.data : []
+    }
+  } catch (e) {
+    console.error('加载回复失败', e)
+  }
+}
+
 function formatTime(dateStr) {
   if (!dateStr) return ''
   return getRelativeTime(dateStr)
@@ -276,14 +293,14 @@ function formatTime(dateStr) {
 
 function hasMyReaction(type) {
   if (!diary.value.reactions || !userStore.userInfo) return false
-  return diary.value.reactions.some(r => r.user_id === userStore.userInfo.id && r.reaction_type === type)
+  return diary.value.reactions.some(r => r.user_id === userStore.userInfo.id && r.type === type)
 }
 
 async function toggleReaction(type) {
   if (!userStore.checkAuth()) return
   try {
     if (hasMyReaction(type)) {
-      await del(`/life/diary/${diaryId.value}/reaction`)
+      await del(`/life/diary/${diaryId.value}/reaction`, { reaction_type: type })
     } else {
       await post(`/life/diary/${diaryId.value}/reaction`, { reaction_type: type })
     }
@@ -328,7 +345,7 @@ async function submitReply() {
     await post(`/life/diary/${diaryId.value}/reply`, body)
     replyContent.value = ''
     replyTarget.value = null
-    await loadDiary()
+    await loadReplies()
     uni.showToast({ title: '留言成功' })
   } catch (e) {
     console.error('留言失败', e)
@@ -346,7 +363,7 @@ function onLongPressReply(reply) {
       if (res.confirm) {
         try {
           await del(`/life/diary/reply/${reply.id}`)
-          await loadDiary()
+          await loadReplies()
           uni.showToast({ title: '已删除' })
         } catch (e) {
           console.error('删除留言失败', e)
@@ -613,6 +630,15 @@ function onLongPressReply(reply) {
 
 .reaction-user-emoji {
   font-size: 28rpx;
+}
+
+.reaction-nickname {
+  font-size: 22rpx;
+  color: #999;
+  max-width: 100rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Replies */

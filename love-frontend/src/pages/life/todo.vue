@@ -33,11 +33,11 @@
     <view v-else class="todo-list">
       <view v-for="item in filteredList" :key="item.id" class="todo-card">
         <view class="todo-main" @click="toggleDone(item)">
-          <view :class="['todo-check', item.status === 1 && 'checked']">
-            <text v-if="item.status === 1">✓</text>
+          <view :class="['todo-check', item.status === 'completed' && 'checked']">
+            <text v-if="item.status === 'completed'">✓</text>
           </view>
           <view class="todo-content">
-            <text :class="['todo-title', item.status === 1 && 'done']">{{ item.title }}</text>
+            <text :class="['todo-title', item.status === 'completed' && 'done']">{{ item.title }}</text>
             <view class="todo-meta">
               <text v-if="item.deadline" class="todo-deadline">{{ formatDeadline(item.deadline) }}</text>
               <text v-if="item.is_shared" class="todo-tag shared">情侣共享</text>
@@ -73,9 +73,9 @@ const refreshing = ref(false)
 const currentTab = ref('pending')
 const scope = ref('all')
 
-const pendingList = computed(() => todoList.value.filter(t => t.status === 0))
+const pendingList = computed(() => todoList.value.filter(t => t.status === 'pending'))
 const filteredList = computed(() => {
-  const list = currentTab.value === 'pending' ? pendingList.value : todoList.value.filter(t => t.status === 1)
+  const list = currentTab.value === 'pending' ? pendingList.value : todoList.value.filter(t => t.status === 'completed')
   if (scope.value === 'mine') return list.filter(t => !t.is_shared)
   if (scope.value === 'couple') return list.filter(t => t.is_shared)
   return list
@@ -107,7 +107,7 @@ async function loadTodos() {
 }
 
 async function toggleDone(item) {
-  const newStatus = item.status === 0 ? 1 : 0
+  const newStatus = item.status === 'pending' ? 'completed' : 'pending'
   try {
     await put(`/life/todo/${item.id}`, { status: newStatus })
     item.status = newStatus

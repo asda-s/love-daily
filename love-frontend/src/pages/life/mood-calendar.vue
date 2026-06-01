@@ -97,18 +97,22 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import { get } from '@/utils/request'
+import { useUserStore } from '@/store/user'
+
+const userStore = useUserStore()
 
 const MOOD_CONFIG = {
-  happy:     { emoji: '\u{1F60A}', name: '开心', color: '#FFD700', bg: '#FFF8DC' },
-  sweet:     { emoji: '\u{1F970}', name: '甜蜜', color: '#FF69B4', bg: '#FFE4EC' },
-  calm:      { emoji: '\u{1F60C}', name: '平静', color: '#87CEEB', bg: '#E0F0FF' },
-  tired:     { emoji: '\u{1F62E}\u{200D}\u{1F4A8}', name: '疲惫', color: '#808080', bg: '#F0F0F0' },
-  sad:       { emoji: '\u{1F622}', name: '难过', color: '#4169E1', bg: '#E8EDFF' },
-  angry:     { emoji: '\u{1F620}', name: '生气', color: '#FF4500', bg: '#FFE8E0' },
-  wronged:   { emoji: '\u{1F97A}', name: '委屈', color: '#9370DB', bg: '#F0E8FF' },
-  surprised: { emoji: '\u{1F929}', name: '惊喜', color: '#FFA500', bg: '#FFF0E0' }
+  happy:     { emoji: '😊', name: '开心', color: '#FFD700', bg: '#FFF8DC' },
+  sweet:     { emoji: '🥰', name: '甜蜜', color: '#FF69B4', bg: '#FFE4EC' },
+  calm:      { emoji: '😌', name: '平静', color: '#87CEEB', bg: '#E0F0FF' },
+  tired:     { emoji: '😮‍💨', name: '疲惫', color: '#808080', bg: '#F0F0F0' },
+  sad:       { emoji: '😢', name: '难过', color: '#4169E1', bg: '#E8EDFF' },
+  angry:     { emoji: '😠', name: '生气', color: '#FF4500', bg: '#FFE8E0' },
+  wronged:   { emoji: '🥺', name: '委屈', color: '#9370DB', bg: '#F0E8FF' },
+  surprised: { emoji: '🤩', name: '惊喜', color: '#FFA500', bg: '#FFF0E0' }
 }
 
 const weekdays = ['日', '一', '二', '三', '四', '五', '六']
@@ -125,7 +129,7 @@ const selectedDate = ref('')
 const selectedEntries = ref([])
 
 function getMoodEmoji(type) {
-  return MOOD_CONFIG[type]?.emoji || '\u{1F610}'
+  return MOOD_CONFIG[type]?.emoji || '😐'
 }
 
 function getMoodName(type) {
@@ -241,7 +245,7 @@ const moodStats = computed(() => {
     .map(([type, count]) => ({
       type,
       count,
-      emoji: MOOD_CONFIG[type]?.emoji || '\u{1F610}',
+      emoji: MOOD_CONFIG[type]?.emoji || '😐',
       name: MOOD_CONFIG[type]?.name || type,
       color: MOOD_CONFIG[type]?.color || '#999',
       percent: Math.round((count / maxCount) * 100)
@@ -256,8 +260,22 @@ async function loadCalendarData() {
       month: currentMonth.value
     })
     if (res && res.data) {
-      daysData.value = res.data.days || {}
-      monthStats.value = res.data.stats || {}
+      const calendar = res.data.calendar || {}
+      const myId = userStore.userInfo?.id
+      const transformed = {}
+      const stats = {}
+      for (const [day, entries] of Object.entries(calendar)) {
+        const dateStr = `${currentYear.value}-${String(currentMonth.value).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+        transformed[dateStr] = entries.map(e => ({
+          ...e,
+          is_mine: e.user_id === myId
+        }))
+        for (const e of entries) {
+          stats[e.mood_type] = (stats[e.mood_type] || 0) + 1
+        }
+      }
+      daysData.value = transformed
+      monthStats.value = stats
     }
   } catch (e) {
     console.error('加载心情日历数据失败', e)
@@ -296,7 +314,7 @@ function goToDetail(id) {
   })
 }
 
-onMounted(() => {
+onShow(() => {
   loadCalendarData()
 })
 </script>

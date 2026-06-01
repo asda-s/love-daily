@@ -346,12 +346,12 @@ async def delete_account(
     # 删除关联数据
     from app.models import (
         Memory, Anniversary, Wish, Whisper, Period, DietPreference,
-        Todo, Item, CheckinProject, CheckinRecord, Benefit,
+        Todo, MoodDiary, CheckinProject, CheckinRecord, Benefit,
         ExchangeRecord, Emotion, Bill, Achievement
     )
     uid = current_user.id
     for model in [Memory, Anniversary, Wish, Period, DietPreference,
-                  Todo, Item, CheckinRecord, Emotion, Bill, Achievement, ExchangeRecord]:
+                  Todo, MoodDiary, CheckinRecord, Emotion, Bill, Achievement, ExchangeRecord]:
         db.query(model).filter(model.user_id == uid).delete(synchronize_session=False)
 
     # Whisper使用sender_id/receiver_id，需单独处理

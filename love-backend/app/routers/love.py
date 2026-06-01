@@ -52,7 +52,7 @@ async def love_overview(
 ):
     level = current_user.level
     points = current_user.heart_points
-    next_level_points = LEVEL_THRESHOLDS.get(level + 1, LEVEL_THRESHOLDS[5])
+    next_level_points = LEVEL_THRESHOLDS.get(level + 1, LEVEL_THRESHOLDS.get(10, 12001))
     current_level_points = LEVEL_THRESHOLDS.get(level, 0)
     progress = 0
     if next_level_points > current_level_points:

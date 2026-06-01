@@ -416,11 +416,12 @@ async def exchange_benefit(
     user.heart_points -= benefit.points
     db.commit()
     db.refresh(record)
+    db.refresh(user)
 
     return success_response({
         "id": record.id,
         "points_consumed": benefit.points,
-        "remaining_points": current_user.heart_points
+        "remaining_points": user.heart_points
     })
 
 
