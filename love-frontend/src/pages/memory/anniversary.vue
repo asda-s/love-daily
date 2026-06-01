@@ -82,7 +82,6 @@ async function onRefresh() {
   await fetchList()
   refreshing.value = false
 }
-}
 
 /**
  * 跳转添加页
