@@ -30,7 +30,6 @@
       refresher-enabled
       :refresher-triggered="refreshing"
       @refresherrefresh="onRefresh"
-      @scrolltolower="loadMore"
     >
       <view v-if="filteredList.length === 0" class="empty-state">
         <text class="empty-icon">🌟</text>
@@ -62,14 +61,6 @@
           </view>
         </view>
       </view>
-
-      <!-- 加载更多提示 -->
-      <view class="loading-more" v-if="loadingMore">
-        <text>加载中...</text>
-      </view>
-      <view class="no-more" v-if="!hasMore && filteredList.length > 0">
-        <text>没有更多了</text>
-      </view>
     </scroll-view>
   </view>
 </template>
@@ -85,12 +76,6 @@ const currentTab = ref('pending')
 // 列表数据
 const list = ref([])
 const refreshing = ref(false)
-
-// 分页状态
-const page = ref(1)
-const pageSize = 20
-const hasMore = ref(true)
-const loadingMore = ref(false)
 
 // 过滤后的列表
 const filteredList = computed(() => {
@@ -115,21 +100,8 @@ async function fetchList() {
  */
 async function onRefresh() {
   refreshing.value = true
-  page.value = 1
-  hasMore.value = true
   await fetchList()
   refreshing.value = false
-}
-
-/**
- * 加载更多
- */
-async function loadMore() {
-  if (loadingMore.value || !hasMore.value) return
-  loadingMore.value = true
-  page.value++
-  await fetchList()
-  loadingMore.value = false
 }
 
 /**
@@ -336,13 +308,5 @@ onShow(() => {
   align-items: center;
   justify-content: center;
   margin-left: 12rpx;
-}
-
-.loading-more,
-.no-more {
-  text-align: center;
-  padding: 30rpx 0;
-  font-size: 24rpx;
-  color: #999999;
 }
 </style>
