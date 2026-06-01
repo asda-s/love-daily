@@ -297,7 +297,7 @@ function changeAvatar() {
       try {
         const uploadRes = await new Promise((resolve, reject) => {
           uni.uploadFile({
-            url: `${import.meta.env.VITE_API_BASE_URL || ''}/memory/upload`,
+            url: `${import.meta.env.VITE_API_BASE_URL || ''}/memory/upload?type=avatar`,
             filePath: filePath,
             name: 'file',
             header: { Authorization: `Bearer ${token}` },

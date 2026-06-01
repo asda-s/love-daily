@@ -9,8 +9,6 @@ from sqlalchemy import and_, or_
 from datetime import datetime, date
 from typing import Optional, List
 import os
-import uuid
-import shutil
 from app.database import get_db
 from app.security import get_current_user
 from app.models import User, Memory, Anniversary, Wish, Whisper, Notification
@@ -297,46 +295,38 @@ async def upload_image(
     # 重新打开（verify后需要重新open）
     img = Image.open(io.BytesIO(contents))
 
-    # 压缩：宽度超过1920px时等比缩放
-    max_width = 1920
-    if img.width > max_width:
-        ratio = max_width / img.width
-        new_size = (max_width, int(img.height * ratio))
-        img = img.resize(new_size, Image.LANCZOS)
-        logger.info(f"图片压缩: {file.filename} {img.width}x{img.height} -> {new_size[0]}x{new_size[1]}")
-
-    # 重新编码保存
-    ext_map = {"jpg": "JPEG", "jpeg": "JPEG", "png": "PNG", "gif": "GIF", "webp": "WEBP"}
-    save_ext = detected_ext if detected_ext != "gif" else "png"  # gif转png保存（压缩后）
-    pil_format = ext_map.get(save_ext, "JPEG")
-
-    buf = io.BytesIO()
-    if pil_format == "PNG":
-        img.save(buf, format="PNG", optimize=True)
-    elif pil_format == "WEBP":
-        img.save(buf, format="WEBP", quality=85)
+    # 头像模式：裁剪为正方形并缩小
+    if request.query_params.get("type") == "avatar":
+        min_dim = min(img.width, img.height)
+        left = (img.width - min_dim) // 2
+        top = (img.height - min_dim) // 2
+        img = img.crop((left, top, left + min_dim, top + min_dim))
+        img = img.resize((200, 200), Image.LANCZOS)
+        logger.info(f"头像裁剪压缩: {file.filename} -> 200x200")
     else:
-        if img.mode in ("RGBA", "P"):
-            img = img.convert("RGB")
-        img.save(buf, format="JPEG", quality=85, optimize=True)
+        # 普通图片：宽度超过1920px时等比缩放
+        max_width = 1920
+        if img.width > max_width:
+            ratio = max_width / img.width
+            new_size = (max_width, int(img.height * ratio))
+            img = img.resize(new_size, Image.LANCZOS)
+            logger.info(f"图片压缩: {file.filename} {img.width}x{img.height} -> {new_size[0]}x{new_size[1]}")
+
+    # 重新编码为JPEG（统一格式，体积小）
+    if img.mode in ("RGBA", "P"):
+        img = img.convert("RGB")
+    quality = 70 if request.query_params.get("type") == "avatar" else 85
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG", quality=quality, optimize=True)
     contents = buf.getvalue()
 
-    # 生成唯一文件名
-    filename = f"{uuid.uuid4().hex}.{save_ext}"
+    import base64
+    b64_str = base64.b64encode(contents).decode("utf-8")
+    data_url = f"data:image/jpeg;base64,{b64_str}"
 
-    # 保存到本地 uploads 目录
-    upload_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
-    os.makedirs(upload_dir, exist_ok=True)
-    filepath = os.path.join(upload_dir, filename)
-
-    with open(filepath, "wb") as f:
-        f.write(contents)
-
-    logger.info(f"图片上传: user={current_user.id} file={filename} size={len(contents)}")
-    base_url = str(request.base_url).rstrip('/')
-    url = f"{base_url}/uploads/{filename}"
+    logger.info(f"图片上传: user={current_user.id} file={file.filename} size={len(contents)} -> base64")
     return success_response(
-        data={"url": url},
+        data={"url": data_url},
         message="上传成功"
     )
 

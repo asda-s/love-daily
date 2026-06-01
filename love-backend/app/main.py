@@ -69,6 +69,20 @@ try:
 except Exception as e:
     logger.warning(f"迁移跳过（列可能已存在）: {str(e)}")
 
+# 简单迁移：扩展图片列为TEXT（支持base64存储）
+try:
+    with engine.connect() as conn:
+        from sqlalchemy import text
+        db_type = engine.url.drivername
+        if 'postgresql' in db_type:
+            conn.execute(text("ALTER TABLE users ALTER COLUMN avatar TYPE TEXT"))
+            conn.execute(text("ALTER TABLE wishes ALTER COLUMN image TYPE TEXT"))
+            conn.execute(text("ALTER TABLE checkin_records ALTER COLUMN image TYPE TEXT"))
+        conn.commit()
+        logger.info("迁移: 图片列扩展为TEXT完成")
+except Exception as e:
+    logger.warning(f"迁移跳过: {str(e)}")
+
 # 限流器
 limiter = Limiter(key_func=get_remote_address, default_limits=["200/minute"])
 

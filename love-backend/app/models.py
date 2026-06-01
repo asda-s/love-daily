@@ -17,7 +17,7 @@ class User(Base):
     username = Column(String(32), unique=True, index=True, nullable=False, comment="账号")
     password = Column(String(128), nullable=False, comment="密码(bcrypt加密)")
     nickname = Column(String(32), nullable=False, comment="昵称")
-    avatar = Column(String(255), default=None, comment="头像URL")
+    avatar = Column(Text, default=None, comment="头像URL")
     invite_code = Column(String(6), unique=True, index=True, nullable=False, comment="邀请码")
     lover_id = Column(Integer, ForeignKey("users.id"), default=None, comment="情侣ID")
     bind_time = Column(DateTime, default=None, comment="绑定情侣时间")
