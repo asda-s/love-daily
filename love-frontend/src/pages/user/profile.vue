@@ -159,6 +159,7 @@ import { onShow } from '@dcloudio/uni-app'
 import { useUserStore } from '@/store/user.js'
 import { put, post } from '@/utils/request'
 import { getToken } from '@/utils/auth'
+import { LEVEL_CONFIG } from '@/utils/constants'
 
 const userStore = useUserStore()
 const userInfo = ref({})
@@ -170,18 +171,16 @@ const oldPassword = ref('')
 const newPassword = ref('')
 const confirmPassword = ref('')
 
-const LEVEL_POINTS = { 1: 100, 2: 300, 3: 600, 4: 1000, 5: 1500, 6: 2100, 7: 2800, 8: 3600, 9: 4500, 10: 5500 }
-
 const nextLevelPoints = computed(() => {
-  const lv = userInfo.value.level || 1
-  return LEVEL_POINTS[lv] || (lv * 500)
+  const next = LEVEL_CONFIG.find(l => l.level === (userInfo.value.level || 1) + 1)
+  return next ? next.min : LEVEL_CONFIG[LEVEL_CONFIG.length - 1].max
 })
 
 const levelProgress = computed(() => {
   const pts = userInfo.value.heart_points || 0
-  const next = nextLevelPoints.value
-  const prev = LEVEL_POINTS[(userInfo.value.level || 1) - 1] || 0
-  return Math.min(100, Math.round(((pts - prev) / (next - prev)) * 100))
+  const current = LEVEL_CONFIG.find(l => l.level === (userInfo.value.level || 1)) || LEVEL_CONFIG[0]
+  const range = current.max === Infinity ? current.min + 1 : current.max - current.min
+  return Math.min(100, Math.round(((pts - current.min) / range) * 100))
 })
 
 const daysTogether = computed(() => {

@@ -2,7 +2,7 @@
  * 通用工具函数模块
  * 提供日期格式化、倒计时计算等常用工具函数
  */
-import { LEVEL_CONFIG } from './constants'
+import { LEVEL_CONFIG, getLevelInfo as _getLevelInfo } from './constants'
 
 /**
  * 格式化日期
@@ -135,33 +135,9 @@ export function formatAmount(amount, decimals = 2) {
 }
 
 /**
- * 获取等级信息
- * @param {number} heartPoints - 心动分
- * @returns {Object} 等级信息
+ * 获取等级信息（从 constants.js 统一来源）
  */
-export function getLevelInfo(heartPoints) {
-  let current = LEVEL_CONFIG[0]
-  for (let i = LEVEL_CONFIG.length - 1; i >= 0; i--) {
-    if (heartPoints >= LEVEL_CONFIG[i].min) {
-      current = LEVEL_CONFIG[i]
-      break
-    }
-  }
-
-  const next = LEVEL_CONFIG.find(l => l.level === current.level + 1)
-  const range = current.max === Infinity ? current.min + 1 : current.max - current.min
-  const progress = current.max === Infinity ? 100 : Math.min(100, ((heartPoints - current.min) / range) * 100)
-
-  return {
-    level: current.level,
-    name: current.name,
-    min: current.min,
-    max: current.max,
-    progress: Math.min(progress, 100),
-    nextLevel: next || null,
-    pointsToNext: next ? next.min - heartPoints : 0
-  }
-}
+export const getLevelInfo = _getLevelInfo
 
 export default {
   formatDate,

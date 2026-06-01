@@ -65,7 +65,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onUnmounted } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { get, put } from '@/utils/request'
 import { useUserStore } from '@/store/user'
@@ -79,6 +79,7 @@ const pageSize = ref(20)
 const total = ref(0)
 const loading = ref(false)
 const unreadCount = ref(0)
+let pollTimer = null
 
 /**
  * 获取悄悄话列表
@@ -140,7 +141,38 @@ onShow(() => {
   page.value = 1
   total.value = 0
   fetchList()
+  startPolling()
 })
+
+function startPolling() {
+  stopPolling()
+  pollTimer = setInterval(async () => {
+    try {
+      const res = await get('/memory/whisper', { page: 1, page_size: 1 }, { useLoading: false, showError: false })
+      if (res && res.data) {
+        const newUnread = res.data.unread_count || 0
+        if (newUnread > unreadCount.value) {
+          list.value = []
+          page.value = 1
+          total.value = 0
+          await fetchList()
+        }
+        unreadCount.value = newUnread
+      }
+    } catch (e) {
+      // silent fail for polling
+    }
+  }, 10000)
+}
+
+function stopPolling() {
+  if (pollTimer) {
+    clearInterval(pollTimer)
+    pollTimer = null
+  }
+}
+
+onUnmounted(() => { stopPolling() })
 </script>
 
 <style lang="scss" scoped>

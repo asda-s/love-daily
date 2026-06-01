@@ -853,22 +853,3 @@ async def get_whisper_list(
             "page_size": page_size
         }
     )
-
-
-@router.get("/debug/test-achieve")
-async def test_achieve(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """Debug endpoint to test achievement unlock"""
-    import logging
-    logger = logging.getLogger(__name__)
-    try:
-        from app.routers.love import try_unlock_achievement
-        logger.info(f"Import success, calling try_unlock_achievement for user {current_user.id}")
-        result = try_unlock_achievement(current_user.id, "故事的开始", db)
-        logger.info(f"Result: {result}")
-        return success_response({"result": result, "user_id": current_user.id})
-    except Exception as e:
-        logger.error(f"Error: {e}", exc_info=True)
-        return error_response(500, str(e))

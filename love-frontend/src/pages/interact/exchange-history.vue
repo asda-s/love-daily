@@ -16,7 +16,10 @@
         </view>
         <view class="record-right">
           <text class="record-points">-{{ r.points }}分</text>
-          <text class="fulfill-tag" :class="{ done: r.is_fulfilled }">{{ r.is_fulfilled ? '已兑现' : '待兑现' }}</text>
+          <view class="fulfill-row">
+            <text class="fulfill-tag" :class="{ done: r.is_fulfilled }">{{ r.is_fulfilled ? '已兑现' : '待兑现' }}</text>
+            <text v-if="!r.is_fulfilled" class="fulfill-btn" @click="fulfillRecord(r)">兑现</text>
+          </view>
         </view>
       </view>
       <!-- 加载更多提示 -->
@@ -34,7 +37,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { get } from '@/utils/request'
+import { get, put } from '@/utils/request'
 
 const records = ref([])
 const refreshing = ref(false)
@@ -70,6 +73,24 @@ const loadMore = async () => {
 }
 
 onMounted(() => { loadData() })
+
+async function fulfillRecord(record) {
+  uni.showModal({
+    title: '确认兑现',
+    content: `确认将「${record.benefit_name}」标记为已兑现？`,
+    success: async (res) => {
+      if (res.confirm) {
+        try {
+          await put(`/interact/exchange/${record.id}/fulfill`)
+          record.is_fulfilled = true
+          uni.showToast({ title: '已兑现', icon: 'success' })
+        } catch (e) {
+          uni.showToast({ title: '操作失败', icon: 'none' })
+        }
+      }
+    }
+  })
+}
 </script>
 
 <style scoped>
@@ -81,6 +102,8 @@ onMounted(() => { loadData() })
 .record-points { font-size: 28rpx; color: #FF69B4; font-weight: bold; display: block; text-align: right; }
 .fulfill-tag { font-size: 20rpx; color: #999; margin-top: 4rpx; }
 .fulfill-tag.done { color: #4caf50; }
+.fulfill-row { display: flex; align-items: center; gap: 12rpx; justify-content: flex-end; }
+.fulfill-btn { font-size: 22rpx; color: #FF69B4; background: rgba(255,105,180,0.1); padding: 4rpx 16rpx; border-radius: 20rpx; }
 .empty { text-align: center; padding: 80rpx; color: #999; }
 .loading-more, .no-more { text-align: center; padding: 30rpx 0; font-size: 24rpx; color: #999; }
 </style>

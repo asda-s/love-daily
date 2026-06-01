@@ -27,8 +27,12 @@
       <view class="header-left">
         <text class="app-title">🎀 心动日常</text>
       </view>
-      <view class="header-right" @click="goProfile">
-        <image class="header-avatar" :src="userStore.userInfo?.avatar || '/static/default-avatar.png'" mode="aspectFill" />
+      <view class="header-right">
+        <view class="header-bell" @click="goNotification">
+          <text class="bell-icon">🔔</text>
+          <view v-if="unreadNotifications > 0" class="bell-badge">{{ unreadNotifications > 9 ? '9+' : unreadNotifications }}</view>
+        </view>
+        <image class="header-avatar" :src="userStore.userInfo?.avatar || '/static/default-avatar.png'" mode="aspectFill" @click="goProfile" />
       </view>
     </view>
 
@@ -230,6 +234,7 @@ const heartPoints = ref(0)
 const loveLevel = ref(1)
 const stats = ref({})
 const unreadWhispers = ref(0)
+const unreadNotifications = ref(0)
 
 onShow(async () => {
   if (!userStore.isLoggedIn) {
@@ -253,6 +258,7 @@ onShow(async () => {
   }
   loadLoveData()
   loadUnreadWhispers()
+  loadUnreadNotifications()
 })
 
 const togetherDays = computed(() => {
@@ -292,7 +298,18 @@ async function loadUnreadWhispers() {
       unreadWhispers.value = res.data.unread_count || 0
     }
   } catch (e) {
-    uni.showToast({ title: '加载失败', icon: 'none' })
+    // silent
+  }
+}
+
+async function loadUnreadNotifications() {
+  try {
+    const res = await get('/user/notifications/unread-count', {}, { useLoading: false, showError: false })
+    if (res && res.data) {
+      unreadNotifications.value = res.data.count || 0
+    }
+  } catch (e) {
+    // silent
   }
 }
 
@@ -334,6 +351,10 @@ function go(url) {
 function goProfile() {
   uni.navigateTo({ url: '/pages/user/profile' })
 }
+
+function goNotification() {
+  uni.navigateTo({ url: '/pages/user/notification' })
+}
 </script>
 
 <style lang="scss" scoped>
@@ -352,6 +373,16 @@ function goProfile() {
   position: relative;
   overflow: hidden;
   .app-title { font-size: 38rpx; font-weight: bold; color: #fff; }
+  .header-right { display: flex; align-items: center; gap: 16rpx; }
+  .header-bell { position: relative; padding: 8rpx; }
+  .bell-icon { font-size: 40rpx; }
+  .bell-badge {
+    position: absolute; top: 0; right: 0;
+    background: #FF4757; color: #fff;
+    font-size: 18rpx; min-width: 28rpx; height: 28rpx;
+    line-height: 28rpx; text-align: center;
+    border-radius: 14rpx; padding: 0 6rpx;
+  }
   .header-avatar { width: 68rpx; height: 68rpx; border-radius: 50%; border: 3rpx solid #fff; }
 }
 .header-deco-bow {

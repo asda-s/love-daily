@@ -212,6 +212,12 @@
 			"style": {
 				"navigationBarTitleText": "等级福利"
 			}
+		},
+		{
+			"path": "pages/user/notification",
+			"style": {
+				"navigationBarTitleText": "消息通知"
+			}
 		}
 	],
 	"globalStyle": {

@@ -107,7 +107,7 @@ function request(options = {}) {
           } else if (result.code === 401) {
             removeToken()
             uni.showToast({ title: '登录已过期，请重新登录', icon: 'none' })
-            setTimeout(() => { uni.reLaunch({ url: '/pages/user/login' }) }, 1500)
+            setTimeout(() => { uni.reLaunch({ url: '/pages/user/login' }) }, 500)
             reject(result)
           } else {
             if (showError) {
@@ -118,7 +118,7 @@ function request(options = {}) {
         } else if (res.statusCode === 401) {
           removeToken()
           uni.showToast({ title: '登录已过期，请重新登录', icon: 'none' })
-          setTimeout(() => { uni.reLaunch({ url: '/pages/user/login' }) }, 1500)
+          setTimeout(() => { uni.reLaunch({ url: '/pages/user/login' }) }, 500)
           reject(res.data)
         } else if (res.statusCode === 403) {
           if (showError) uni.showToast({ title: '没有访问权限', icon: 'none' })

@@ -80,6 +80,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { get, post, put } from '@/utils/request'
 import { formatDate } from '@/utils/common'
+import { getToken } from '@/utils/auth'
 
 const editId = ref(null)
 const formData = reactive({
@@ -124,8 +125,42 @@ function chooseImage() {
     count: remaining,
     sizeType: ['compressed'],
     sourceType: ['album', 'camera'],
-    success: (res) => {
-      formData.images = [...formData.images, ...res.tempFilePaths]
+    success: async (res) => {
+      const token = getToken()
+      if (!token) {
+        uni.showToast({ title: '请先登录', icon: 'none' })
+        return
+      }
+      uni.showLoading({ title: '上传中...', mask: true })
+      try {
+        const uploadedUrls = []
+        for (const filePath of res.tempFilePaths) {
+          const uploadRes = await new Promise((resolve, reject) => {
+            uni.uploadFile({
+              url: `${import.meta.env.VITE_API_BASE_URL || ''}/memory/upload`,
+              filePath: filePath,
+              name: 'file',
+              header: { Authorization: `Bearer ${token}` },
+              success: (r) => {
+                if (r.statusCode === 200) {
+                  const data = JSON.parse(r.data)
+                  if (data.code === 200) resolve(data)
+                  else reject(new Error(data.message || '上传失败'))
+                } else {
+                  reject(new Error('上传失败'))
+                }
+              },
+              fail: (err) => reject(new Error(err.errMsg || '网络连接失败'))
+            })
+          })
+          uploadedUrls.push(uploadRes.data.url)
+        }
+        formData.images = [...formData.images, ...uploadedUrls]
+        uni.hideLoading()
+      } catch (e) {
+        uni.hideLoading()
+        uni.showToast({ title: e.message || '图片上传失败', icon: 'none' })
+      }
     }
   })
 }

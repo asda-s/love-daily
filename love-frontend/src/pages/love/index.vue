@@ -50,15 +50,24 @@
 
     <view class="section">
       <text class="section-title">积分兑换福利</text>
-      <view class="benefit-card">
-        <view class="benefit-item" v-for="item in exchangeList" :key="item.name">
-          <text class="benefit-icon">{{ item.icon }}</text>
+      <view class="benefit-card" v-if="benefitList.length > 0">
+        <view class="benefit-item" v-for="item in benefitList" :key="item.id">
+          <text class="benefit-icon">🎁</text>
           <view class="benefit-info">
             <text class="benefit-name">{{ item.name }}</text>
-            <text class="benefit-cost">{{ item.cost }} 心动分</text>
+            <text class="benefit-cost">{{ item.points }} 心动分</text>
           </view>
-          <view :class="['benefit-btn', (overview.heart_points || 0) < item.cost && 'disabled']" @click="exchangeBenefit(item)">
-            {{ (overview.heart_points || 0) >= item.cost ? '兑换' : '积分不足' }}
+          <view :class="['benefit-btn', !item.can_exchange && 'disabled']" @click="exchangeBenefit(item)">
+            {{ item.can_exchange ? '兑换' : '积分不足' }}
+          </view>
+        </view>
+      </view>
+      <view class="benefit-card" v-else>
+        <view class="benefit-item">
+          <text class="benefit-icon">🎁</text>
+          <view class="benefit-info">
+            <text class="benefit-name">暂无福利</text>
+            <text class="benefit-cost">去"等级福利"页面创建兑换项目吧</text>
           </view>
         </view>
       </view>
@@ -76,16 +85,16 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { get } from '@/utils/request'
+import { get, post } from '@/utils/request'
 import { useUserStore } from '@/store/user.js'
+import { LEVEL_CONFIG } from '@/utils/constants'
 import CustomTabbar from '@/components/custom-tabbar.vue'
 
 const userStore = useUserStore()
 const overview = ref({})
+const benefitList = ref([])
 
-const LEVEL_POINTS = { 1: 100, 2: 300, 3: 600, 4: 1000, 5: 1500, 6: 2100, 7: 2800, 8: 3600, 9: 4500, 10: 5500 }
 const LEVEL_NAMES = { 1: '初识心动', 2: '甜蜜热恋', 3: '默契伴侣', 4: '灵魂知己', 5: '真爱永恒', 6: '神仙眷侣', 7: '心有灵犀', 8: '情深似海', 9: '至死不渝', 10: '天作之合' }
-const LEVEL_BENEFITS = { 1: '奶茶报销券', 2: '免生气卡', 3: '惊喜盲盒', 4: '旅行基金', 5: '定制纪念品' }
 
 const pointsGuide = [
   { icon: '✅', name: '每日打卡', desc: '坚持打卡养成好习惯', pts: 5 },
@@ -95,22 +104,30 @@ const pointsGuide = [
   { icon: '🎭', name: '记录情绪', desc: '分享今天的心情', pts: 3 },
 ]
 
-const exchangeList = [
-  { icon: '🧋', name: '奶茶报销券', cost: 20 },
-  { icon: '😤', name: '免生气卡', cost: 50 },
-  { icon: '🎁', name: '惊喜盲盒', cost: 100 },
-  { icon: '✈️', name: '旅行基金', cost: 200 },
-]
-
 const levelName = computed(() => LEVEL_NAMES[overview.value.level || 1] || '恋爱新手')
-const nextLevelPoints = computed(() => LEVEL_POINTS[(overview.value.level || 1)] || ((overview.value.level || 1) + 1) * 500)
-const nextLevelBenefit = computed(() => LEVEL_BENEFITS[(overview.value.level || 1) + 1] || '更多惊喜')
+const nextLevelPoints = computed(() => {
+  const next = LEVEL_CONFIG.find(l => l.level === (overview.value.level || 1) + 1)
+  return next ? next.min : LEVEL_CONFIG[LEVEL_CONFIG.length - 1].max
+})
+const nextLevelBenefit = computed(() => {
+  const next = LEVEL_CONFIG.find(l => l.level === (overview.value.level || 1) + 1)
+  return next ? next.name + '等级' : '最高等级'
+})
 const levelProgress = computed(() => {
   const pts = overview.value.heart_points || 0
-  const next = nextLevelPoints.value
-  const prev = LEVEL_POINTS[(overview.value.level || 1) - 1] || 0
-  return Math.min(100, Math.max(0, Math.round(((pts - prev) / (next - prev)) * 100)))
+  const current = LEVEL_CONFIG.find(l => l.level === (overview.value.level || 1)) || LEVEL_CONFIG[0]
+  const range = current.max === Infinity ? current.min + 1 : current.max - current.min
+  return Math.min(100, Math.max(0, Math.round(((pts - current.min) / range) * 100)))
 })
+
+async function loadBenefits() {
+  try {
+    const res = await get('/interact/benefit')
+    if (res && res.data) benefitList.value = res.data
+  } catch (e) {
+    benefitList.value = []
+  }
+}
 
 onShow(async () => {
   if (!userStore.isLoggedIn) {
@@ -118,22 +135,40 @@ onShow(async () => {
     return
   }
   try {
-    const res = await get('/love/overview')
-    if (res && res.data) overview.value = res.data
+    const [overviewRes] = await Promise.all([
+      get('/love/overview'),
+      loadBenefits()
+    ])
+    if (overviewRes && overviewRes.data) overview.value = overviewRes.data
   } catch (e) {
-    console.error('加载恋爱概览失败', e)
     uni.showToast({ title: '加载失败', icon: 'none' })
   }
 })
 
 function go(page) { uni.navigateTo({ url: `/pages/love/${page}` }) }
 
-function exchangeBenefit(item) {
-  if ((overview.value.heart_points || 0) < item.cost) {
+async function exchangeBenefit(item) {
+  if ((overview.value.heart_points || 0) < item.points) {
     uni.showToast({ title: '心动分不足', icon: 'none' })
     return
   }
-  uni.showToast({ title: '兑换功能即将上线', icon: 'none' })
+  uni.showModal({
+    title: '确认兑换',
+    content: `确定用 ${item.points} 心动分兑换「${item.name}」？`,
+    success: async (res) => {
+      if (res.confirm) {
+        try {
+          await post(`/interact/benefit/${item.id}/exchange`)
+          uni.showToast({ title: '兑换成功！', icon: 'success' })
+          const overviewRes = await get('/love/overview')
+          if (overviewRes && overviewRes.data) overview.value = overviewRes.data
+          loadBenefits()
+        } catch (e) {
+          // error toast handled by request.js
+        }
+      }
+    }
+  })
 }
 </script>
 

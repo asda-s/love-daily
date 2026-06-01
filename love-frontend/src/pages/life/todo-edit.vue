@@ -6,28 +6,20 @@
         <input class="input" v-model="form.title" placeholder="待办事项内容" />
       </view>
       <view class="form-item">
-        <text class="label">描述</text>
-        <textarea class="textarea" v-model="form.description" placeholder="详细描述（可选）" />
+        <text class="label">备注</text>
+        <textarea class="textarea" v-model="form.note" placeholder="详细描述（可选）" />
       </view>
       <view class="form-item">
-        <text class="label">范围</text>
+        <text class="label">类型</text>
         <view class="radio-group">
-          <view class="radio" :class="{ active: form.scope === 'personal' }" @click="form.scope = 'personal'">个人</view>
-          <view class="radio" :class="{ active: form.scope === 'couple' }" @click="form.scope = 'couple'">情侣</view>
-        </view>
-      </view>
-      <view class="form-item">
-        <text class="label">优先级</text>
-        <view class="radio-group">
-          <view class="radio" :class="{ active: form.priority === 1 }" @click="form.priority = 1">高</view>
-          <view class="radio" :class="{ active: form.priority === 2 }" @click="form.priority = 2">中</view>
-          <view class="radio" :class="{ active: form.priority === 3 }" @click="form.priority = 3">低</view>
+          <view class="radio" :class="{ active: form.type === 'personal' }" @click="form.type = 'personal'">个人</view>
+          <view class="radio" :class="{ active: form.type === 'couple' }" @click="form.type = 'couple'">情侣</view>
         </view>
       </view>
       <view class="form-item">
         <text class="label">截止日期</text>
-        <picker mode="date" :value="form.due_date" @change="form.due_date = $event.detail.value">
-          <view class="picker-value">{{ form.due_date || '请选择（可选）' }}</view>
+        <picker mode="date" :value="form.deadline" @change="form.deadline = $event.detail.value">
+          <view class="picker-value">{{ form.deadline || '请选择（可选）' }}</view>
         </picker>
       </view>
     </view>
@@ -44,10 +36,9 @@ import { get, post, put, del } from '@/utils/request'
 
 const form = ref({
   title: '',
-  description: '',
-  scope: 'personal',
-  priority: 2,
-  due_date: ''
+  note: '',
+  type: 'personal',
+  deadline: ''
 })
 const isEdit = ref(false)
 const recordId = ref(null)
@@ -68,10 +59,9 @@ const loadRecord = async () => {
     if (res && res.data) {
       form.value = {
         title: res.data.title,
-        description: res.data.description || '',
-        scope: res.data.scope,
-        priority: res.data.priority,
-        due_date: res.data.due_date || ''
+        note: res.data.note || '',
+        type: res.data.type || 'personal',
+        deadline: res.data.deadline ? res.data.deadline.split(' ')[0] : ''
       }
     }
   } catch (e) {
@@ -87,14 +77,20 @@ const onSubmit = async () => {
   }
 
   try {
+    const payload = {
+      title: form.value.title,
+      note: form.value.note || null,
+      type: form.value.type,
+      deadline: form.value.deadline ? form.value.deadline + ' 00:00:00' : null
+    }
     if (isEdit.value) {
-      const res = await put(`/life/todo/${recordId.value}`, form.value)
+      const res = await put(`/life/todo/${recordId.value}`, payload)
       if (res) {
         uni.showToast({ title: '修改成功' })
         setTimeout(() => uni.navigateBack(), 1000)
       }
     } else {
-      const res = await post('/life/todo', form.value)
+      const res = await post('/life/todo', payload)
       if (res) {
         uni.showToast({ title: '创建成功' })
         setTimeout(() => uni.navigateBack(), 1000)

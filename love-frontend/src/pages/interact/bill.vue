@@ -21,6 +21,9 @@
           <text class="summary-value highlight">¥{{ summary.total }}</text>
         </view>
       </view>
+      <view v-if="summary.balance_desc" class="balance-row">
+        <text class="balance-text">{{ summary.balance_desc }}</text>
+      </view>
     </view>
 
     <scroll-view class="bill-list" scroll-y refresher-enabled :refresher-triggered="refreshing" @refresherrefresh="onRefresh" @scrolltolower="loadMore">
@@ -153,6 +156,8 @@ function deleteBill(item) {
 .summary-label { font-size: 24rpx; color: #999; display: block; margin-bottom: 8rpx; }
 .summary-value { font-size: 30rpx; font-weight: bold; }
 .summary-value.highlight { color: #FF69B4; }
+.balance-row { margin-top: 16rpx; padding-top: 16rpx; border-top: 1rpx solid #FFF5F9; text-align: center; }
+.balance-text { font-size: 24rpx; color: #FF69B4; }
 .bill-list { padding: 0 20rpx; height: calc(100vh - 340rpx); }
 .bill-item { display: flex; justify-content: space-between; align-items: center; background: #fff; border-radius: 12rpx; padding: 24rpx; margin-bottom: 12rpx; }
 .bill-left { display: flex; align-items: center; gap: 16rpx; }
