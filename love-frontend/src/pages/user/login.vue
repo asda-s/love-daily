@@ -101,6 +101,7 @@ async function handleLogin() {
     }, 1500)
   } catch (e) {
     console.error('登录失败', e)
+    uni.showToast({ title: '登录失败，请重试', icon: 'none' })
   } finally {
     loading.value = false
   }

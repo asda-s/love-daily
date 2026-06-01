@@ -55,6 +55,7 @@ onMounted(async () => {
     if (res && res.data) summary.value = res.data
   } catch (e) {
     console.error('加载月度统计失败', e)
+    uni.showToast({ title: '加载失败', icon: 'none' })
   }
 })
 </script>

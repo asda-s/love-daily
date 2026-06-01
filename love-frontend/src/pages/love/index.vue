@@ -122,6 +122,7 @@ onShow(async () => {
     if (res && res.data) overview.value = res.data
   } catch (e) {
     console.error('加载恋爱概览失败', e)
+    uni.showToast({ title: '加载失败', icon: 'none' })
   }
 })
 

@@ -261,6 +261,7 @@ async function loadCalendarData() {
     }
   } catch (e) {
     console.error('加载心情日历数据失败', e)
+    uni.showToast({ title: '加载失败', icon: 'none' })
   }
 }
 

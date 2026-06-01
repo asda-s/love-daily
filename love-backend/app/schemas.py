@@ -4,7 +4,7 @@ Pydantic数据模型定义模块
 """
 
 from pydantic import BaseModel, Field
-from typing import Optional, List
+from typing import Optional, List, Literal
 from datetime import datetime, date
 
 
@@ -97,7 +97,7 @@ class AnniversaryCreate(BaseModel):
     target_date: date = Field(..., description="目标日期")
     is_yearly: bool = Field(False, description="是否每年循环")
     remind_days: int = Field(3, ge=1, le=30, description="提前提醒天数")
-    type: str = Field("personal", description="类型: personal-个人, couple-情侣")
+    type: Literal["personal", "couple"] = Field("personal", description="类型: personal-个人, couple-情侣")
     note: Optional[str] = Field(None, description="备注")
 
 
@@ -114,7 +114,7 @@ class AnniversaryUpdate(BaseModel):
 class WishCreate(BaseModel):
     """心愿创建入参"""
     content: str = Field(..., min_length=1, max_length=200, description="心愿内容")
-    type: str = Field("personal", description="类型: personal-个人, couple-情侣")
+    type: Literal["personal", "couple"] = Field("personal", description="类型: personal-个人, couple-情侣")
     note: Optional[str] = Field(None, description="备注")
 
 
@@ -126,7 +126,7 @@ class WishComplete(BaseModel):
 
 class WhisperCreate(BaseModel):
     """悄悄话创建入参"""
-    content: str = Field(..., min_length=1, description="内容")
+    content: str = Field(..., min_length=1, max_length=2000, description="内容")
     is_scheduled: bool = Field(False, description="是否定时发送")
     scheduled_time: Optional[datetime] = Field(None, description="定时发送时间")
 
@@ -167,7 +167,7 @@ class TodoCreate(BaseModel):
     deadline: Optional[datetime] = Field(None, description="截止日期")
     remind_time: Optional[datetime] = Field(None, description="提醒时间")
     note: Optional[str] = Field(None, description="备注")
-    type: str = Field("personal", description="类型: personal-个人, couple-情侣")
+    type: Literal["personal", "couple"] = Field("personal", description="类型: personal-个人, couple-情侣")
 
 
 class TodoUpdate(BaseModel):
@@ -176,34 +176,34 @@ class TodoUpdate(BaseModel):
     deadline: Optional[datetime] = Field(None, description="截止日期")
     remind_time: Optional[datetime] = Field(None, description="提醒时间")
     note: Optional[str] = Field(None, description="备注")
-    status: Optional[str] = Field(None, description="状态")
+    status: Optional[Literal["pending", "completed"]] = Field(None, description="状态")
 
 
 class MoodDiaryCreate(BaseModel):
     """心情日记创建入参"""
-    mood_type: str = Field(..., description="心情类型")
+    mood_type: Literal["happy", "sweet", "calm", "tired", "sad", "angry", "wronged", "surprised"] = Field(..., description="心情类型")
     mood_intensity: int = Field(3, ge=1, le=5, description="心情强度1-5")
-    second_mood: Optional[str] = Field(None, description="混合心情第二类型")
+    second_mood: Optional[Literal["happy", "sweet", "calm", "tired", "sad", "angry", "wronged", "surprised"]] = Field(None, description="混合心情第二类型")
     content: str = Field(..., min_length=1, max_length=5000, description="日记内容")
-    images: Optional[List[str]] = Field(None, description="图片URL列表，最多9张")
-    tags: Optional[List[str]] = Field(None, description="标签列表，最多3个")
-    publish_status: str = Field("published", description="发布状态: draft/published/scheduled")
+    images: Optional[List[str]] = Field(None, max_length=9, description="图片URL列表，最多9张")
+    tags: Optional[List[str]] = Field(None, max_length=3, description="标签列表，最多3个")
+    publish_status: Literal["draft", "published", "scheduled"] = Field("published", description="发布状态")
     scheduled_time: Optional[datetime] = Field(None, description="定时发布时间")
 
 
 class MoodDiaryUpdate(BaseModel):
     """心情日记更新入参"""
-    mood_type: Optional[str] = Field(None, description="心情类型")
+    mood_type: Optional[Literal["happy", "sweet", "calm", "tired", "sad", "angry", "wronged", "surprised"]] = Field(None, description="心情类型")
     mood_intensity: Optional[int] = Field(None, ge=1, le=5, description="心情强度1-5")
-    second_mood: Optional[str] = Field(None, description="混合心情第二类型")
+    second_mood: Optional[Literal["happy", "sweet", "calm", "tired", "sad", "angry", "wronged", "surprised"]] = Field(None, description="混合心情第二类型")
     content: Optional[str] = Field(None, min_length=1, max_length=5000, description="日记内容")
-    images: Optional[List[str]] = Field(None, description="图片URL列表，最多9张")
-    tags: Optional[List[str]] = Field(None, description="标签列表，最多3个")
+    images: Optional[List[str]] = Field(None, max_length=9, description="图片URL列表，最多9张")
+    tags: Optional[List[str]] = Field(None, max_length=3, description="标签列表，最多3个")
 
 
 class MoodDiaryReactionCreate(BaseModel):
     """日记快速反应入参"""
-    reaction_type: str = Field(..., description="反应类型: hug/kiss/like/cheer/pat/heart")
+    reaction_type: Literal["hug", "kiss", "like", "cheer", "pat", "heart"] = Field(..., description="反应类型")
 
 
 class MoodDiaryReplyCreate(BaseModel):
@@ -251,17 +251,17 @@ class BenefitUpdate(BaseModel):
 
 class EmotionCreate(BaseModel):
     """情绪发布入参"""
-    emotion_type: str = Field(..., description="情绪类型: happy-开心, sad-难过, angry-生气, wronged-委屈, anxious-焦虑")
-    content: str = Field(..., min_length=1, description="内容")
+    emotion_type: Literal["happy", "sad", "angry", "wronged", "anxious"] = Field(..., description="情绪类型")
+    content: str = Field(..., min_length=1, max_length=2000, description="内容")
     is_sync: bool = Field(False, description="是否同步给情侣")
 
 
 class BillCreate(BaseModel):
     """情侣账本创建入参"""
     amount: float = Field(..., gt=0, description="开支金额")
-    type: str = Field("other", description="类型")
+    type: Literal["food", "travel", "gift", "daily", "other"] = Field("other", description="类型")
     pay_time: datetime = Field(..., description="开支时间")
-    payer: str = Field(..., description="支付人: me-我, lover-对方, aa-AA制")
+    payer: Literal["me", "lover", "aa"] = Field(..., description="支付人")
     note: Optional[str] = Field(None, description="备注")
     is_aa: bool = Field(False, description="是否AA制")
 
@@ -269,9 +269,9 @@ class BillCreate(BaseModel):
 class BillUpdate(BaseModel):
     """情侣账本更新入参"""
     amount: Optional[float] = Field(None, gt=0, description="开支金额")
-    type: Optional[str] = Field(None, description="类型")
+    type: Optional[Literal["food", "travel", "gift", "daily", "other"]] = Field(None, description="类型")
     pay_time: Optional[datetime] = Field(None, description="开支时间")
-    payer: Optional[str] = Field(None, description="支付人")
+    payer: Optional[Literal["me", "lover", "aa"]] = Field(None, description="支付人")
     note: Optional[str] = Field(None, description="备注")
     is_aa: Optional[bool] = Field(None, description="是否AA制")
 

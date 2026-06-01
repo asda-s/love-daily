@@ -118,6 +118,7 @@ const loadRecords = async () => {
     }
   } catch (e) {
     console.error('加载经期记录失败', e)
+    uni.showToast({ title: '加载失败', icon: 'none' })
   }
 }
 
@@ -143,6 +144,7 @@ const loadPrediction = async () => {
     }
   } catch (e) {
     console.error('加载预测失败', e)
+    uni.showToast({ title: '加载失败', icon: 'none' })
   }
 }
 

@@ -244,6 +244,7 @@ const loadDiary = async () => {
     }
   } catch (e) {
     console.error('加载日记失败', e)
+    uni.showToast({ title: '加载失败', icon: 'none' })
   }
 }
 
@@ -442,6 +443,7 @@ const onPublish = async () => {
     setTimeout(() => uni.navigateBack(), 1000)
   } catch (e) {
     console.error('发布失败', e)
+    uni.showToast({ title: '发布失败，请重试', icon: 'none' })
   }
 }
 
@@ -458,6 +460,7 @@ const onSaveDraft = async () => {
     setTimeout(() => uni.navigateBack(), 1000)
   } catch (e) {
     console.error('保存草稿失败', e)
+    uni.showToast({ title: '保存失败，请重试', icon: 'none' })
   }
 }
 

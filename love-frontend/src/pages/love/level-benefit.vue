@@ -35,7 +35,9 @@ onMounted(async () => {
     ])
     if (lRes && lRes.data) levels.value = lRes.data
     if (oRes && oRes.data) currentLevel.value = oRes.data.level || 1
-  } catch (e) {}
+  } catch (e) {
+    uni.showToast({ title: '加载失败', icon: 'none' })
+  }
 })
 </script>
 

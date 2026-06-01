@@ -118,6 +118,11 @@
         <text class="menu-text">等级福利</text>
         <text class="menu-arrow">></text>
       </view>
+      <view v-if="userStore.isBindLover" class="menu-item danger" @click="handleUnbind">
+        <text class="menu-icon">💔</text>
+        <text class="menu-text">解除绑定</text>
+        <text class="menu-arrow">></text>
+      </view>
     </view>
 
     <view class="logout-btn" @click="handleLogout">退出登录</view>
@@ -137,7 +142,8 @@
       <view class="dialog-box">
         <text class="dialog-title">修改密码</text>
         <input class="dialog-input" v-model="oldPassword" type="password" placeholder="请输入原密码" />
-        <input class="dialog-input" v-model="newPassword" type="password" placeholder="请输入新密码" />
+        <input class="dialog-input" v-model="newPassword" type="password" placeholder="请输入新密码（至少6位）" />
+        <input class="dialog-input" v-model="confirmPassword" type="password" placeholder="请再次输入新密码" />
         <view class="dialog-btns">
           <view class="dialog-btn cancel" @click="showPassword = false">取消</view>
           <view class="dialog-btn confirm" @click="savePassword">保存</view>
@@ -162,6 +168,7 @@ const showPassword = ref(false)
 const newNickname = ref('')
 const oldPassword = ref('')
 const newPassword = ref('')
+const confirmPassword = ref('')
 
 const LEVEL_POINTS = { 1: 100, 2: 300, 3: 600, 4: 1000, 5: 1500, 6: 2100, 7: 2800, 8: 3600, 9: 4500, 10: 5500 }
 
@@ -223,30 +230,57 @@ async function saveNickname() {
       uni.showToast({ title: '修改成功' })
       showNickname.value = false
     }
-  } catch (e) {}
+  } catch (e) {
+    uni.showToast({ title: '保存失败，请重试', icon: 'none' })
+  }
 }
 
 function showPasswordEdit() {
   oldPassword.value = ''
   newPassword.value = ''
+  confirmPassword.value = ''
   showPassword.value = true
 }
 
 async function savePassword() {
   if (!oldPassword.value) { uni.showToast({ title: '请输入原密码', icon: 'none' }); return }
   if (!newPassword.value || newPassword.value.length < 6) { uni.showToast({ title: '新密码至少6位', icon: 'none' }); return }
+  if (newPassword.value !== confirmPassword.value) { uni.showToast({ title: '两次输入的密码不一致', icon: 'none' }); return }
   try {
     const res = await put('/user/info', { old_password: oldPassword.value, new_password: newPassword.value })
     if (res) {
       uni.showToast({ title: '修改成功' })
       showPassword.value = false
     }
-  } catch (e) {}
+  } catch (e) {
+    uni.showToast({ title: '保存失败，请重试', icon: 'none' })
+  }
 }
 
 function goAchievement() { uni.navigateTo({ url: '/pages/love/achievement' }) }
 function goLevelBenefit() { uni.navigateTo({ url: '/pages/love/level-benefit' }) }
 function goLove() { uni.switchTab({ url: '/pages/love/index' }) }
+
+function handleUnbind() {
+  uni.showModal({
+    title: '解除绑定',
+    content: '解除后将无法查看对方数据，确定解除情侣绑定？',
+    confirmColor: '#e43d33',
+    success: async (res) => {
+      if (res.confirm) {
+        try {
+          await post('/user/unbind')
+          userStore.loverInfo = null
+          userInfo.value.lover_id = null
+          loverInfo.value = {}
+          uni.showToast({ title: '已解除绑定' })
+        } catch (e) {
+          uni.showToast({ title: '操作失败，请重试', icon: 'none' })
+        }
+      }
+    }
+  })
+}
 
 function changeAvatar() {
   uni.chooseImage({
@@ -565,6 +599,7 @@ function handleLogout() {
   border-bottom: 1rpx solid #FFF5F9;
 }
 .menu-item:last-child { border-bottom: none; }
+.menu-item.danger .menu-text { color: #e43d33; }
 .menu-icon { font-size: 36rpx; margin-right: 20rpx; }
 .menu-text { flex: 1; font-size: 28rpx; color: #333; }
 .menu-arrow { font-size: 28rpx; color: #ccc; }

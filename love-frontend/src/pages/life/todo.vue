@@ -101,7 +101,9 @@ async function loadTodos() {
         is_shared: t.type === 'couple'
       }))
     }
-  } catch (e) {}
+  } catch (e) {
+    uni.showToast({ title: '加载失败', icon: 'none' })
+  }
 }
 
 async function toggleDone(item) {
@@ -109,7 +111,9 @@ async function toggleDone(item) {
   try {
     await put(`/life/todo/${item.id}`, { status: newStatus })
     item.status = newStatus
-  } catch (e) {}
+  } catch (e) {
+    uni.showToast({ title: '操作失败，请重试', icon: 'none' })
+  }
 }
 
 async function onRefresh() {
@@ -128,7 +132,9 @@ function deleteTodo(item) {
         try {
           await del('/life/todo/' + item.id)
           await loadTodos()
-        } catch (e) {}
+        } catch (e) {
+          uni.showToast({ title: '删除失败，请重试', icon: 'none' })
+        }
       }
     }
   })

@@ -72,6 +72,7 @@ const loadBenefits = async () => {
     if (res && res.data) benefits.value = res.data
   } catch (e) {
     console.error('加载福利失败', e)
+    uni.showToast({ title: '加载失败', icon: 'none' })
   }
 }
 
@@ -89,7 +90,9 @@ const exchange = async (benefit) => {
             userPoints.value = res.data.remaining_points
             loadBenefits()
           }
-        } catch (e) {}
+        } catch (e) {
+          uni.showToast({ title: '兑换失败，请重试', icon: 'none' })
+        }
       }
     }
   })
@@ -106,7 +109,9 @@ const addBenefit = async () => {
     showAdd.value = false
     form.value = { name: '', points: 10, rule: '', is_repeatable: false }
     loadBenefits()
-  } catch (e) {}
+  } catch (e) {
+    uni.showToast({ title: '创建失败，请重试', icon: 'none' })
+  }
 }
 
 const goHistory = () => {
@@ -131,7 +136,9 @@ function deleteBenefit(benefit) {
         try {
           await del('/interact/benefit/' + benefit.id)
           await loadBenefits()
-        } catch (e) {}
+        } catch (e) {
+          uni.showToast({ title: '删除失败，请重试', icon: 'none' })
+        }
       }
     }
   })

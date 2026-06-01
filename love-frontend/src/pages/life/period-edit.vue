@@ -67,6 +67,7 @@ const loadRecord = async () => {
     }
   } catch (e) {
     console.error('加载经期记录失败', e)
+    uni.showToast({ title: '加载失败', icon: 'none' })
   }
 }
 
@@ -114,7 +115,9 @@ const onSubmit = async () => {
         setTimeout(() => uni.navigateBack(), 1000)
       }
     }
-  } catch (e) {}
+  } catch (e) {
+    uni.showToast({ title: '保存失败，请重试', icon: 'none' })
+  }
 }
 
 const onDelete = async () => {
@@ -127,7 +130,9 @@ const onDelete = async () => {
           await del(`/life/period/${recordId.value}`)
           uni.showToast({ title: '已删除' })
           setTimeout(() => uni.navigateBack(), 1000)
-        } catch (e) {}
+        } catch (e) {
+          uni.showToast({ title: '删除失败，请重试', icon: 'none' })
+        }
       }
     }
   })

@@ -1,6 +1,14 @@
 <template>
   <view class="emotion-page">
-    <view class="emotion-list">
+    <scroll-view
+      class="emotion-list"
+      scroll-y
+      style="height: calc(100vh - 120rpx)"
+      refresher-enabled
+      :refresher-triggered="refreshing"
+      @refresherrefresh="onRefresh"
+      @scrolltolower="loadMore"
+    >
       <view class="emotion-card" v-for="e in emotions" :key="e.id" :class="e.emotion_type">
         <view class="emotion-header">
           <view class="emotion-icon">{{ emotionIcons[e.emotion_type] }}</view>
@@ -17,12 +25,20 @@
         </view>
         <view class="sync-tag" v-if="e.is_sync">已同步给TA</view>
       </view>
+      <!-- 加载更多提示 -->
+      <view class="loading-more" v-if="loadingMore">
+        <text>加载中...</text>
+      </view>
+      <view class="no-more" v-if="!hasMore && emotions.length > 0">
+        <text>没有更多了</text>
+      </view>
+
       <view class="empty" v-if="!emotions.length">
         <text class="empty-icon">🫧</text>
         <text class="empty-text">还没有情绪记录</text>
         <text class="empty-hint">记录你的心情，让TA更懂你</text>
       </view>
-    </view>
+    </scroll-view>
     <view class="fab" @click="goPublish">+</view>
   </view>
 </template>
@@ -33,6 +49,11 @@ import { get, del } from '@/utils/request'
 
 const emotions = ref([])
 const emotionIcons = { happy: '😊', sad: '😢', angry: '😠', wronged: '🥺', anxious: '😰' }
+const refreshing = ref(false)
+const page = ref(1)
+const pageSize = 20
+const hasMore = ref(true)
+const loadingMore = ref(false)
 
 onMounted(() => { loadEmotions() })
 
@@ -40,7 +61,25 @@ const loadEmotions = async () => {
   try {
     const res = await get('/interact/emotion')
     if (res && res.data) emotions.value = res.data
-  } catch (e) {}
+  } catch (e) {
+    uni.showToast({ title: '加载失败', icon: 'none' })
+  }
+}
+
+const onRefresh = async () => {
+  refreshing.value = true
+  page.value = 1
+  hasMore.value = true
+  await loadEmotions()
+  refreshing.value = false
+}
+
+const loadMore = async () => {
+  if (loadingMore.value || !hasMore.value) return
+  loadingMore.value = true
+  page.value++
+  await loadEmotions()
+  loadingMore.value = false
 }
 
 const deleteEmotion = async (id) => {
@@ -51,7 +90,9 @@ const deleteEmotion = async (id) => {
         try {
           await del(`/interact/emotion/${id}`)
           emotions.value = emotions.value.filter(e => e.id !== id)
-        } catch (e) {}
+        } catch (e) {
+          uni.showToast({ title: '删除失败，请重试', icon: 'none' })
+        }
       }
     }
   })
@@ -86,4 +127,5 @@ const goPublish = () => {
 .empty-text { font-size: 30rpx; color: #666; display: block; margin-bottom: 12rpx; }
 .empty-hint { font-size: 24rpx; color: #bbb; display: block; }
 .fab { position: fixed; right: 40rpx; bottom: 140rpx; width: 100rpx; height: 100rpx; background: #FF69B4; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 48rpx; color: #fff; box-shadow: 0 4rpx 16rpx rgba(255,107,157,0.4); }
+.loading-more, .no-more { text-align: center; padding: 30rpx 0; font-size: 24rpx; color: #999; }
 </style>

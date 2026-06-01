@@ -94,6 +94,7 @@ const loadData = async () => {
     }
   } catch (e) {
     console.error('加载饮食偏好失败', e)
+    uni.showToast({ title: '加载失败', icon: 'none' })
   }
   if (userStore.userInfo?.lover_id) {
     try {
@@ -103,6 +104,7 @@ const loadData = async () => {
       }
     } catch (e) {
       console.error('加载TA的偏好失败', e)
+      uni.showToast({ title: '加载失败', icon: 'none' })
     }
   }
 }
@@ -111,7 +113,9 @@ const saveMyPreference = async () => {
   try {
     await post('/life/diet', myPreference.value)
     uni.showToast({ title: '保存成功' })
-  } catch (e) {}
+  } catch (e) {
+    uni.showToast({ title: '保存失败，请重试', icon: 'none' })
+  }
 }
 </script>
 

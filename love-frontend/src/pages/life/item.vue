@@ -292,6 +292,7 @@ async function loadDiaryList(reset = false) {
     }
   } catch (e) {
     console.error('加载日记失败', e)
+    uni.showToast({ title: '加载失败', icon: 'none' })
   } finally {
     loading.value = false
   }
@@ -379,6 +380,7 @@ async function addReaction(reactionType) {
     await loadDiaryList(true)
   } catch (e) {
     console.error('添加互动失败', e)
+    uni.showToast({ title: '操作失败，请重试', icon: 'none' })
   }
 }
 
@@ -401,6 +403,7 @@ async function toggleReaction(item, reactionType) {
     await loadDiaryList(true)
   } catch (e) {
     console.error('操作互动失败', e)
+    uni.showToast({ title: '操作失败，请重试', icon: 'none' })
   }
 }
 
@@ -458,11 +461,12 @@ async function deleteDiary(id) {
     await loadDiaryList(true)
   } catch (e) {
     console.error('删除日记失败', e)
+    uni.showToast({ title: '删除失败，请重试', icon: 'none' })
   }
 }
 
 function goDetail(id) {
-  uni.navigateTo({ url: `/pages/life/mood-diary-detail?id=${id}` })
+  uni.navigateTo({ url: `/pages/life/diary-detail?id=${id}` })
 }
 
 function goCalendar() {
@@ -470,7 +474,7 @@ function goCalendar() {
 }
 
 function goReport() {
-  uni.navigateTo({ url: '/pages/life/mood-report' })
+  uni.navigateTo({ url: '/pages/life/mood-calendar' })
 }
 
 function goCreate() {

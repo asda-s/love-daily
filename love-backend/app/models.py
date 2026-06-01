@@ -3,7 +3,7 @@
 定义所有数据库表结构，使用SQLAlchemy ORM
 """
 
-from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, Float, ForeignKey, Date, UniqueConstraint
+from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, Float, Numeric, ForeignKey, Date, UniqueConstraint
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.database import Base
@@ -313,7 +313,7 @@ class Bill(Base):
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True, comment="创建人ID")
-    amount = Column(Float, nullable=False, comment="开支金额")
+    amount = Column(Numeric(10, 2), nullable=False, comment="开支金额")
     type = Column(String(20), default="other", comment="类型: food-吃饭, travel-旅行, gift-礼物, daily-日常, other-其他")
     pay_time = Column(DateTime, nullable=False, comment="开支时间")
     payer = Column(String(20), nullable=False, comment="支付人: me-我, lover-对方, aa-AA制")

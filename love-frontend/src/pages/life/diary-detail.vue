@@ -290,6 +290,7 @@ async function toggleReaction(type) {
     await loadDiary()
   } catch (e) {
     console.error('操作反应失败', e)
+    uni.showToast({ title: '操作失败，请重试', icon: 'none' })
   }
 }
 
@@ -331,6 +332,7 @@ async function submitReply() {
     uni.showToast({ title: '留言成功' })
   } catch (e) {
     console.error('留言失败', e)
+    uni.showToast({ title: '提交失败，请重试', icon: 'none' })
   }
 }
 
@@ -348,6 +350,7 @@ function onLongPressReply(reply) {
           uni.showToast({ title: '已删除' })
         } catch (e) {
           console.error('删除留言失败', e)
+          uni.showToast({ title: '删除失败，请重试', icon: 'none' })
         }
       }
     }

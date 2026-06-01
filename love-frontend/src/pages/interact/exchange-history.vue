@@ -1,6 +1,14 @@
 <template>
   <view class="exchange-page">
-    <view class="record-list">
+    <scroll-view
+      class="record-list"
+      scroll-y
+      style="height: calc(100vh - 20rpx)"
+      refresher-enabled
+      :refresher-triggered="refreshing"
+      @refresherrefresh="onRefresh"
+      @scrolltolower="loadMore"
+    >
       <view class="record-item" v-for="r in records" :key="r.id">
         <view class="record-info">
           <view class="record-name">{{ r.benefit_name }}</view>
@@ -11,8 +19,16 @@
           <text class="fulfill-tag" :class="{ done: r.is_fulfilled }">{{ r.is_fulfilled ? '已兑现' : '待兑现' }}</text>
         </view>
       </view>
+      <!-- 加载更多提示 -->
+      <view class="loading-more" v-if="loadingMore">
+        <text>加载中...</text>
+      </view>
+      <view class="no-more" v-if="!hasMore && records.length > 0">
+        <text>没有更多了</text>
+      </view>
+
       <view class="empty" v-if="!records.length"><text>暂无兑换记录</text></view>
-    </view>
+    </scroll-view>
   </view>
 </template>
 
@@ -21,15 +37,39 @@ import { ref, onMounted } from 'vue'
 import { get } from '@/utils/request'
 
 const records = ref([])
+const refreshing = ref(false)
+const page = ref(1)
+const pageSize = 20
+const hasMore = ref(true)
+const loadingMore = ref(false)
 
-onMounted(async () => {
+const loadData = async () => {
   try {
     const res = await get('/interact/exchange/history')
     if (res && res.data) records.value = res.data
   } catch (e) {
     console.error('加载兑换记录失败', e)
+    uni.showToast({ title: '加载失败', icon: 'none' })
   }
-})
+}
+
+const onRefresh = async () => {
+  refreshing.value = true
+  page.value = 1
+  hasMore.value = true
+  await loadData()
+  refreshing.value = false
+}
+
+const loadMore = async () => {
+  if (loadingMore.value || !hasMore.value) return
+  loadingMore.value = true
+  page.value++
+  await loadData()
+  loadingMore.value = false
+}
+
+onMounted(() => { loadData() })
 </script>
 
 <style scoped>
@@ -42,4 +82,5 @@ onMounted(async () => {
 .fulfill-tag { font-size: 20rpx; color: #999; margin-top: 4rpx; }
 .fulfill-tag.done { color: #4caf50; }
 .empty { text-align: center; padding: 80rpx; color: #999; }
+.loading-more, .no-more { text-align: center; padding: 30rpx 0; font-size: 24rpx; color: #999; }
 </style>

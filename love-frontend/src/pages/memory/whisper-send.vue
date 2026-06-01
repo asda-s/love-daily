@@ -109,9 +109,10 @@ async function handleSubmit() {
   loading.value = true
   try {
     await post('/memory/whisper', formData)
-    uni.showToast({ 
-      title: formData.is_scheduled ? '已设置定时发送' : '发送成功', 
-      icon: 'success' 
+    uni.vibrateShort({ type: 'light' })
+    uni.showToast({
+      title: formData.is_scheduled ? '已设置定时发送' : '发送成功',
+      icon: 'success'
     })
     
     setTimeout(() => {
@@ -119,6 +120,7 @@ async function handleSubmit() {
     }, 1500)
   } catch (e) {
     console.error('发送失败', e)
+    uni.showToast({ title: '发送失败，请重试', icon: 'none' })
   } finally {
     loading.value = false
   }

@@ -165,6 +165,7 @@ async function handleSubmit() {
     }, 1500)
   } catch (e) {
     console.error('提交失败', e)
+    uni.showToast({ title: '提交失败，请重试', icon: 'none' })
   } finally {
     loading.value = false
   }

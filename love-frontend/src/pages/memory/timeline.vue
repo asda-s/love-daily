@@ -111,6 +111,7 @@ async function fetchList(isRefresh = false) {
     noMore.value = list.value.length >= total.value
   } catch (e) {
     console.error('获取时光线失败', e)
+    uni.showToast({ title: '加载失败', icon: 'none' })
   } finally {
     loading.value = false
     refreshing.value = false

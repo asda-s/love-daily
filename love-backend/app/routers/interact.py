@@ -393,7 +393,9 @@ async def exchange_benefit(
     if not benefit:
         return error_response(404, "福利不存在")
 
-    if current_user.heart_points < benefit.points:
+    # 使用 SELECT FOR UPDATE 锁定用户行，防止并发扣分
+    user = db.query(User).filter(User.id == current_user.id).with_for_update().first()
+    if user.heart_points < benefit.points:
         return error_response(400, "心动分不足")
 
     if not benefit.is_repeatable:
@@ -411,7 +413,7 @@ async def exchange_benefit(
     )
     db.add(record)
 
-    current_user.heart_points -= benefit.points
+    user.heart_points -= benefit.points
     db.commit()
     db.refresh(record)
 

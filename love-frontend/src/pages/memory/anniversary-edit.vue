@@ -142,6 +142,7 @@ async function fetchDetail() {
     }
   } catch (e) {
     console.error('获取详情失败', e)
+    uni.showToast({ title: '加载失败', icon: 'none' })
   }
 }
 
@@ -174,6 +175,7 @@ async function handleSubmit() {
     }, 1500)
   } catch (e) {
     console.error('提交失败', e)
+    uni.showToast({ title: '提交失败，请重试', icon: 'none' })
   } finally {
     loading.value = false
   }
@@ -196,6 +198,7 @@ function handleDelete() {
           }, 1500)
         } catch (e) {
           console.error('删除失败', e)
+          uni.showToast({ title: '删除失败，请重试', icon: 'none' })
         }
       }
     }

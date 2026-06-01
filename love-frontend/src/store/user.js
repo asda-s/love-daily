@@ -88,6 +88,16 @@ export const useUserStore = defineStore('user', () => {
     loverInfo.value = res.data
     return res.data
   }
+
+  /**
+   * 解除情侣绑定
+   */
+  async function unbindLover() {
+    const res = await post('/user/unbind')
+    await getUserInfoFromServer()
+    loverInfo.value = null
+    return res
+  }
   
   /**
    * 退出登录
@@ -125,6 +135,7 @@ export const useUserStore = defineStore('user', () => {
     getUserInfoFromServer,
     updateUserInfo,
     bindLover,
+    unbindLover,
     getLoverInfo,
     logout,
     checkAuth

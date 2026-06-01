@@ -40,7 +40,9 @@ const onSubmit = async () => {
       uni.showToast({ title: '发布成功' })
       setTimeout(() => uni.navigateBack(), 1000)
     }
-  } catch (e) {}
+  } catch (e) {
+    uni.showToast({ title: '发布失败，请重试', icon: 'none' })
+  }
 }
 </script>
 

@@ -111,6 +111,7 @@ const loadData = async () => {
     if (sRes && sRes.data) stats.value = sRes.data
   } catch (e) {
     console.error('加载打卡数据失败', e)
+    uni.showToast({ title: '加载失败', icon: 'none' })
   }
 }
 
@@ -122,6 +123,7 @@ const doCheckin = async (project) => {
   try {
     const res = await post('/interact/checkin', { project_id: project.id })
     if (res && res.data) {
+      uni.vibrateShort({ type: 'heavy' })
       uni.showToast({ title: `打卡成功 +${res.data.points_earned}分` })
       project.is_checked_today = true
       project.consecutive_days++
@@ -129,7 +131,9 @@ const doCheckin = async (project) => {
       stats.value.total_checkins++
       stats.value.heart_points = res.data.total_points
     }
-  } catch (e) {}
+  } catch (e) {
+    uni.showToast({ title: '打卡失败，请重试', icon: 'none' })
+  }
 }
 
 const addProject = async () => {
@@ -143,7 +147,9 @@ const addProject = async () => {
     showAddDialog.value = false
     newProject.value = { name: '', points: 5, is_joint: false }
     loadData()
-  } catch (e) {}
+  } catch (e) {
+    uni.showToast({ title: '创建失败，请重试', icon: 'none' })
+  }
 }
 
 const goHistory = () => {

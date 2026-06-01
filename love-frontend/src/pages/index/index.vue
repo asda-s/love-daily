@@ -241,7 +241,9 @@ onShow(async () => {
     if (userStore.isBindLover && !userStore.loverInfo) {
       await userStore.getLoverInfo()
     }
-  } catch (e) {}
+  } catch (e) {
+    uni.showToast({ title: '加载失败', icon: 'none' })
+  }
   if (!userStore.isBindLover) {
     const code = userStore.userInfo?.invite_code || uni.getStorageSync('invite_code')
     if (code) myInviteCode.value = code
@@ -278,7 +280,9 @@ async function loadLoveData() {
     if (statsRes && statsRes.data) {
       stats.value = statsRes.data
     }
-  } catch (e) {}
+  } catch (e) {
+    uni.showToast({ title: '加载失败', icon: 'none' })
+  }
 }
 
 async function loadUnreadWhispers() {
@@ -287,7 +291,9 @@ async function loadUnreadWhispers() {
     if (res && res.data) {
       unreadWhispers.value = res.data.unread_count || 0
     }
-  } catch (e) {}
+  } catch (e) {
+    uni.showToast({ title: '加载失败', icon: 'none' })
+  }
 }
 
 function copyCode() {

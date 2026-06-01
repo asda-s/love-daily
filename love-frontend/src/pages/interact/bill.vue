@@ -23,7 +23,7 @@
       </view>
     </view>
 
-    <scroll-view class="bill-list" scroll-y refresher-enabled :refresher-triggered="refreshing" @refresherrefresh="onRefresh">
+    <scroll-view class="bill-list" scroll-y refresher-enabled :refresher-triggered="refreshing" @refresherrefresh="onRefresh" @scrolltolower="loadMore">
       <view class="bill-item" v-for="b in bills" :key="b.id">
         <view class="bill-left">
           <text class="bill-type-tag">{{ typeNames[b.type] || b.type }}</text>
@@ -38,6 +38,14 @@
           <text class="bill-delete" @click="deleteBill(b)">删除</text>
         </view>
       </view>
+      <!-- 加载更多提示 -->
+      <view class="loading-more" v-if="loadingMore">
+        <text>加载中...</text>
+      </view>
+      <view class="no-more" v-if="!hasMore && bills.length > 0">
+        <text>没有更多了</text>
+      </view>
+
       <view class="empty" v-if="!bills.length">
         <text class="empty-icon">🧾</text>
         <text class="empty-text">还没有账单记录</text>
@@ -62,6 +70,10 @@ const currentMonth = ref(now.getMonth() + 1)
 const bills = ref([])
 const refreshing = ref(false)
 const summary = ref(null)
+const page = ref(1)
+const pageSize = 20
+const hasMore = ref(true)
+const loadingMore = ref(false)
 const typeNames = { food: '餐饮', travel: '旅行', gift: '礼物', daily: '日常', other: '其他' }
 
 onMounted(() => { loadData() })
@@ -75,7 +87,9 @@ const loadData = async () => {
     ])
     if (bRes && bRes.data) bills.value = bRes.data
     if (sRes && sRes.data) summary.value = sRes.data
-  } catch (e) {}
+  } catch (e) {
+    uni.showToast({ title: '加载失败', icon: 'none' })
+  }
 }
 
 const prevMonth = () => {
@@ -95,8 +109,18 @@ const goMonthly = () => uni.navigateTo({ url: `/pages/interact/bill-monthly?year
 
 async function onRefresh() {
   refreshing.value = true
+  page.value = 1
+  hasMore.value = true
   await loadData()
   refreshing.value = false
+}
+
+async function loadMore() {
+  if (loadingMore.value || !hasMore.value) return
+  loadingMore.value = true
+  page.value++
+  await loadData()
+  loadingMore.value = false
 }
 
 function deleteBill(item) {
@@ -109,7 +133,9 @@ function deleteBill(item) {
         try {
           await del('/interact/bill/' + item.id)
           await loadData()
-        } catch (e) {}
+        } catch (e) {
+          uni.showToast({ title: '删除失败，请重试', icon: 'none' })
+        }
       }
     }
   })
@@ -143,4 +169,5 @@ function deleteBill(item) {
 .bottom-btns { position: fixed; bottom: 110rpx; left: 0; right: 0; display: flex; gap: 16rpx; padding: 20rpx; background: #fff; z-index: 100; }
 .btn { flex: 1; text-align: center; padding: 24rpx; background: #FF69B4; color: #fff; border-radius: 40rpx; font-size: 28rpx; }
 .btn.secondary { background: #FFF5F9; color: #666; }
+.loading-more, .no-more { text-align: center; padding: 30rpx 0; font-size: 24rpx; color: #999; }
 </style>

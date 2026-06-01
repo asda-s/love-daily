@@ -180,8 +180,9 @@ async def bind_lover(
     - 校验对方是否已绑定，已绑定返回错误
     - 绑定成功后双方lover_id字段双向更新
     """
-    # 检查是否已绑定
-    if current_user.lover_id:
+    # 使用 SELECT FOR UPDATE 锁定当前用户行
+    user = db.query(User).filter(User.id == current_user.id).with_for_update().first()
+    if user.lover_id:
         return error_response(400, "您已绑定情侣，无法重复绑定")
 
     # 查找邀请码对应用户
@@ -190,23 +191,24 @@ async def bind_lover(
         return error_response(400, "邀请码无效")
 
     # 检查是否绑定自己
-    if lover.id == current_user.id:
+    if lover.id == user.id:
         return error_response(400, "不能绑定自己")
 
-    # 检查对方是否已绑定
+    # 锁定对方行，防止并发绑定
+    lover = db.query(User).filter(User.id == lover.id).with_for_update().first()
     if lover.lover_id:
         return error_response(400, "对方已绑定情侣")
 
     # 执行双向绑定
     from datetime import datetime
     bind_time = datetime.now()
-    current_user.lover_id = lover.id
-    current_user.bind_time = bind_time
-    lover.lover_id = current_user.id
+    user.lover_id = lover.id
+    user.bind_time = bind_time
+    lover.lover_id = user.id
     lover.bind_time = bind_time
 
     db.commit()
-    db.refresh(current_user)
+    db.refresh(user)
 
     return success_response(message="绑定成功")
 

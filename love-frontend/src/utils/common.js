@@ -139,26 +139,28 @@ export function formatAmount(amount, decimals = 2) {
  * @returns {Object} 等级信息
  */
 export function getLevelInfo(heartPoints) {
-  const levels = [
-    { level: 1, name: '初识心动', min: 0, max: 100, benefit: '解锁告白手写信电子档' },
-    { level: 2, name: '双向奔赴', min: 101, max: 300, benefit: '解锁奶茶报销券1张' },
-    { level: 3, name: '满心欢喜', min: 301, max: 600, benefit: '解锁双人短途约会1次' },
-    { level: 4, name: '来日方长', min: 601, max: 1000, benefit: '解锁专属礼物兑换券' },
-    { level: 5, name: '共度余生', min: 1001, max: Infinity, benefit: '解锁专属纪念册定制权限' }
-  ]
-  
-  const currentLevel = levels.find(l => heartPoints >= l.min && heartPoints <= l.max) || levels[0]
-  const nextLevel = levels.find(l => l.level === currentLevel.level + 1)
-  
-  const progress = nextLevel 
-    ? ((heartPoints - currentLevel.min) / (nextLevel.min - currentLevel.min)) * 100
-    : 100
-  
+  const { LEVEL_CONFIG } = require('./constants')
+
+  let current = LEVEL_CONFIG[0]
+  for (let i = LEVEL_CONFIG.length - 1; i >= 0; i--) {
+    if (heartPoints >= LEVEL_CONFIG[i].min) {
+      current = LEVEL_CONFIG[i]
+      break
+    }
+  }
+
+  const next = LEVEL_CONFIG.find(l => l.level === current.level + 1)
+  const range = current.max === Infinity ? current.min + 1 : current.max - current.min
+  const progress = current.max === Infinity ? 100 : Math.min(100, ((heartPoints - current.min) / range) * 100)
+
   return {
-    ...currentLevel,
+    level: current.level,
+    name: current.name,
+    min: current.min,
+    max: current.max,
     progress: Math.min(progress, 100),
-    nextLevel,
-    pointsToNext: nextLevel ? nextLevel.min - heartPoints : 0
+    nextLevel: next || null,
+    pointsToNext: next ? next.min - heartPoints : 0
   }
 }
 

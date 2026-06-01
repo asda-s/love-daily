@@ -22,8 +22,8 @@ load_dotenv()
 
 _raw_key = os.getenv("SECRET_KEY", "")
 if not _raw_key or _raw_key == "your-secret-key-change-this-in-production":
-    SECRET_KEY = "love-daily-fixed-secret-key-2024"
-    logger.warning("未配置SECRET_KEY，使用默认密钥（建议在.env中配置自定义密钥）")
+    SECRET_KEY = secrets.token_hex(32)
+    logger.warning("⚠️ 未配置SECRET_KEY，已生成随机密钥。重启后所有Token将失效！请在.env或环境变量中配置SECRET_KEY")
 else:
     SECRET_KEY = _raw_key
 

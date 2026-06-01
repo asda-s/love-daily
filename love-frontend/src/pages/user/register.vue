@@ -116,6 +116,7 @@ async function handleRegister() {
     }, 1500)
   } catch (e) {
     console.error('注册失败', e)
+    uni.showToast({ title: '注册失败，请重试', icon: 'none' })
   } finally {
     loading.value = false
   }

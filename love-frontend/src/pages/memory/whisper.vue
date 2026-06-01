@@ -98,6 +98,7 @@ async function fetchList() {
     unreadCount.value = res.data.unread_count || 0
   } catch (e) {
     console.error('获取悄悄话失败', e)
+    uni.showToast({ title: '加载失败', icon: 'none' })
   } finally {
     loading.value = false
   }
@@ -130,6 +131,7 @@ async function markRead(item) {
     item.is_read = true
   } catch (e) {
     console.error('标记已读失败', e)
+    uni.showToast({ title: '操作失败，请重试', icon: 'none' })
   }
 }
 

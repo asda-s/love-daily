@@ -117,6 +117,7 @@ function handleDelete() {
           }, 1500)
         } catch (e) {
           console.error('删除失败', e)
+          uni.showToast({ title: '删除失败，请重试', icon: 'none' })
         }
       }
     }
