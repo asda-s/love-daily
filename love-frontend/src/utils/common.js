@@ -2,6 +2,7 @@
  * 通用工具函数模块
  * 提供日期格式化、倒计时计算等常用工具函数
  */
+import { LEVEL_CONFIG } from './constants'
 
 /**
  * 格式化日期
@@ -139,8 +140,6 @@ export function formatAmount(amount, decimals = 2) {
  * @returns {Object} 等级信息
  */
 export function getLevelInfo(heartPoints) {
-  const { LEVEL_CONFIG } = require('./constants')
-
   let current = LEVEL_CONFIG[0]
   for (let i = LEVEL_CONFIG.length - 1; i >= 0; i--) {
     if (heartPoints >= LEVEL_CONFIG[i].min) {

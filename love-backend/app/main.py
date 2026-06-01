@@ -49,6 +49,26 @@ try:
 except Exception as e:
     logger.warning(f"迁移跳过（列可能已存在）: {str(e)}")
 
+# 简单迁移：mood_diaries 表新增列
+try:
+    with engine.connect() as conn:
+        from sqlalchemy import text
+        db_type = engine.url.drivername
+        if 'postgresql' in db_type:
+            conn.execute(text("DO $$ BEGIN ALTER TABLE mood_diaries ADD COLUMN diary_date DATE NOT NULL DEFAULT CURRENT_DATE; EXCEPTION WHEN duplicate_column THEN NULL; END $$"))
+            conn.execute(text("DO $$ BEGIN ALTER TABLE mood_diaries ADD COLUMN second_mood VARCHAR(20); EXCEPTION WHEN duplicate_column THEN NULL; END $$"))
+            conn.execute(text("DO $$ BEGIN ALTER TABLE mood_diaries ADD COLUMN mood_intensity INTEGER DEFAULT 3; EXCEPTION WHEN duplicate_column THEN NULL; END $$"))
+            conn.execute(text("DO $$ BEGIN ALTER TABLE mood_diaries ADD COLUMN images TEXT; EXCEPTION WHEN duplicate_column THEN NULL; END $$"))
+            conn.execute(text("DO $$ BEGIN ALTER TABLE mood_diaries ADD COLUMN tags TEXT; EXCEPTION WHEN duplicate_column THEN NULL; END $$"))
+            conn.execute(text("DO $$ BEGIN ALTER TABLE mood_diaries ADD COLUMN is_read BOOLEAN DEFAULT FALSE; EXCEPTION WHEN duplicate_column THEN NULL; END $$"))
+            conn.execute(text("DO $$ BEGIN ALTER TABLE mood_diaries ADD COLUMN read_time TIMESTAMP; EXCEPTION WHEN duplicate_column THEN NULL; END $$"))
+            conn.execute(text("DO $$ BEGIN ALTER TABLE mood_diaries ADD COLUMN publish_status VARCHAR(20) DEFAULT 'published'; EXCEPTION WHEN duplicate_column THEN NULL; END $$"))
+            conn.execute(text("DO $$ BEGIN ALTER TABLE mood_diaries ADD COLUMN scheduled_time TIMESTAMP; EXCEPTION WHEN duplicate_column THEN NULL; END $$"))
+        conn.commit()
+        logger.info("迁移: mood_diaries 表新增列检查完成")
+except Exception as e:
+    logger.warning(f"迁移跳过（列可能已存在）: {str(e)}")
+
 # 限流器
 limiter = Limiter(key_func=get_remote_address, default_limits=["200/minute"])
 
