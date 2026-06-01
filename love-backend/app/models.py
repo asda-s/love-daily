@@ -173,6 +173,7 @@ class MoodDiary(Base):
     content = Column(Text, nullable=False, comment="日记内容")
     images = Column(Text, default=None, comment="图片JSON数组")
     tags = Column(Text, default=None, comment="标签JSON数组,最多3个")
+    diary_date = Column(Date, nullable=False, comment="日记日期（记录哪一天的心情）")
     is_read = Column(Boolean, default=False, comment="对方是否已读")
     read_time = Column(DateTime, default=None, comment="对方阅读时间")
     publish_status = Column(String(20), default="published", comment="发布状态: draft/published/scheduled")

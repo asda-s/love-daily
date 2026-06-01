@@ -187,6 +187,7 @@ class MoodDiaryCreate(BaseModel):
     content: str = Field(..., min_length=1, max_length=5000, description="日记内容")
     images: Optional[List[str]] = Field(None, max_length=9, description="图片URL列表，最多9张")
     tags: Optional[List[str]] = Field(None, max_length=3, description="标签列表，最多3个")
+    diary_date: date = Field(..., description="日记日期（记录哪一天的心情）")
     publish_status: Literal["draft", "published", "scheduled"] = Field("published", description="发布状态")
     scheduled_time: Optional[datetime] = Field(None, description="定时发布时间")
 
@@ -199,6 +200,7 @@ class MoodDiaryUpdate(BaseModel):
     content: Optional[str] = Field(None, min_length=1, max_length=5000, description="日记内容")
     images: Optional[List[str]] = Field(None, max_length=9, description="图片URL列表，最多9张")
     tags: Optional[List[str]] = Field(None, max_length=3, description="标签列表，最多3个")
+    diary_date: Optional[date] = Field(None, description="日记日期")
 
 
 class MoodDiaryReactionCreate(BaseModel):

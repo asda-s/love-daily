@@ -9,6 +9,18 @@
       <view class="header-placeholder"></view>
     </view>
 
+    <!-- Section 0: Date Selection -->
+    <view class="section-card">
+      <text class="section-label">记录日期</text>
+      <picker mode="date" :value="form.diary_date" @change="onDateChange">
+        <view class="date-picker">
+          <text class="date-icon">📅</text>
+          <text class="date-text">{{ form.diary_date || '选择日期' }}</text>
+          <text class="date-hint">{{ getDateHint(form.diary_date) }}</text>
+        </view>
+      </picker>
+    </view>
+
     <!-- Section 1: Mood Selection -->
     <view class="section-card">
       <text class="section-label">此刻心情</text>
@@ -191,6 +203,7 @@ const form = reactive({
   content: '',
   images: [],
   tags: [],
+  diary_date: new Date().toISOString().split('T')[0],
   publish_status: 'published',
   scheduled_time: ''
 })
@@ -230,6 +243,7 @@ const loadDiary = async () => {
       form.content = d.content || ''
       form.images = d.images || []
       form.tags = d.tags || []
+      form.diary_date = d.diary_date || new Date().toISOString().split('T')[0]
       form.publish_status = d.publish_status || 'published'
       form.scheduled_time = d.scheduled_time || ''
       if (form.second_mood) {
@@ -275,6 +289,20 @@ const loadDraft = async () => {
   } catch (e) {
     // No draft found, ignore
   }
+}
+
+// ---- Date Selection ----
+const onDateChange = (e) => {
+  form.diary_date = e.detail.value
+}
+
+const getDateHint = (dateStr) => {
+  if (!dateStr) return ''
+  const today = new Date().toISOString().split('T')[0]
+  const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
+  if (dateStr === today) return '今天'
+  if (dateStr === yesterday) return '昨天'
+  return ''
 }
 
 // ---- Mood Selection ----
@@ -543,6 +571,19 @@ const onBack = () => {
   margin-bottom: 20rpx;
   display: block;
 }
+
+/* Date Picker */
+.date-picker {
+  display: flex;
+  align-items: center;
+  background: #FFF5F9;
+  border: 2rpx solid #FFD6E4;
+  border-radius: 16rpx;
+  padding: 20rpx 24rpx;
+}
+.date-icon { font-size: 36rpx; margin-right: 16rpx; }
+.date-text { font-size: 30rpx; color: #333; font-weight: 500; }
+.date-hint { font-size: 24rpx; color: #FF69B4; margin-left: 16rpx; }
 
 /* Mood Grid */
 .mood-grid {

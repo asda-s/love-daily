@@ -595,6 +595,7 @@ async def create_diary(
         content=data.content,
         images=images_json,
         tags=tags_json,
+        diary_date=data.diary_date,
         publish_status=data.publish_status,
         scheduled_time=data.scheduled_time
     )
@@ -911,6 +912,8 @@ async def update_diary(
         diary.images = json.dumps(data.images)
     if data.tags is not None:
         diary.tags = json.dumps(data.tags)
+    if data.diary_date is not None:
+        diary.diary_date = data.diary_date
 
     db.commit()
     return success_response(message="编辑成功")
