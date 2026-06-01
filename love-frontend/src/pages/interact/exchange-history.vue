@@ -7,7 +7,6 @@
       refresher-enabled
       :refresher-triggered="refreshing"
       @refresherrefresh="onRefresh"
-      @scrolltolower="loadMore"
     >
       <view class="record-item" v-for="r in records" :key="r.id">
         <view class="record-info">
@@ -22,13 +21,6 @@
           </view>
         </view>
       </view>
-      <!-- 加载更多提示 -->
-      <view class="loading-more" v-if="loadingMore">
-        <text>加载中...</text>
-      </view>
-      <view class="no-more" v-if="!hasMore && records.length > 0">
-        <text>没有更多了</text>
-      </view>
 
       <view class="empty" v-if="!records.length"><text>暂无兑换记录</text></view>
     </scroll-view>
@@ -36,15 +28,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import { get, put } from '@/utils/request'
 
 const records = ref([])
 const refreshing = ref(false)
-const page = ref(1)
-const pageSize = 20
-const hasMore = ref(true)
-const loadingMore = ref(false)
 
 const loadData = async () => {
   try {
@@ -58,21 +47,11 @@ const loadData = async () => {
 
 const onRefresh = async () => {
   refreshing.value = true
-  page.value = 1
-  hasMore.value = true
   await loadData()
   refreshing.value = false
 }
 
-const loadMore = async () => {
-  if (loadingMore.value || !hasMore.value) return
-  loadingMore.value = true
-  page.value++
-  await loadData()
-  loadingMore.value = false
-}
-
-onMounted(() => { loadData() })
+onShow(() => { loadData() })
 
 async function fulfillRecord(record) {
   uni.showModal({
@@ -105,5 +84,4 @@ async function fulfillRecord(record) {
 .fulfill-row { display: flex; align-items: center; gap: 12rpx; justify-content: flex-end; }
 .fulfill-btn { font-size: 22rpx; color: #FF69B4; background: rgba(255,105,180,0.1); padding: 4rpx 16rpx; border-radius: 20rpx; }
 .empty { text-align: center; padding: 80rpx; color: #999; }
-.loading-more, .no-more { text-align: center; padding: 30rpx 0; font-size: 24rpx; color: #999; }
 </style>

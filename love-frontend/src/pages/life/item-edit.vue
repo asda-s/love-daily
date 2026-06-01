@@ -435,6 +435,7 @@ const buildPayload = (status) => {
     content: form.content,
     images: form.images,
     tags: form.tags,
+    diary_date: form.diary_date,
     publish_status: status || form.publish_status
   }
   if (payload.publish_status === 'scheduled') {

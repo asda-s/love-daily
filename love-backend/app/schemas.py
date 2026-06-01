@@ -201,6 +201,8 @@ class MoodDiaryUpdate(BaseModel):
     images: Optional[List[str]] = Field(None, max_length=9, description="图片URL列表，最多9张")
     tags: Optional[List[str]] = Field(None, max_length=3, description="标签列表，最多3个")
     diary_date: Optional[date] = Field(None, description="日记日期")
+    publish_status: Optional[Literal["draft", "published", "scheduled"]] = Field(None, description="发布状态")
+    scheduled_time: Optional[datetime] = Field(None, description="定时发布时间")
 
 
 class MoodDiaryReactionCreate(BaseModel):

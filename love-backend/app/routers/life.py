@@ -881,6 +881,9 @@ async def get_diary_detail(
         "tags": json.loads(diary.tags) if diary.tags else [],
         "is_read": diary.is_read,
         "read_time": diary.read_time.strftime("%Y-%m-%d %H:%M:%S") if diary.read_time else None,
+        "diary_date": diary.diary_date.isoformat() if diary.diary_date else None,
+        "publish_status": diary.publish_status,
+        "scheduled_time": diary.scheduled_time.strftime("%Y-%m-%d %H:%M:%S") if diary.scheduled_time else None,
         "reactions": reaction_list,
         "my_reaction": my_reaction.reaction_type if my_reaction else None,
         "created_at": diary.created_at.strftime("%Y-%m-%d %H:%M:%S") if diary.created_at else None
@@ -914,6 +917,10 @@ async def update_diary(
         diary.tags = json.dumps(data.tags)
     if data.diary_date is not None:
         diary.diary_date = data.diary_date
+    if data.publish_status is not None:
+        diary.publish_status = data.publish_status
+    if data.scheduled_time is not None:
+        diary.scheduled_time = data.scheduled_time
 
     db.commit()
     return success_response(message="编辑成功")
