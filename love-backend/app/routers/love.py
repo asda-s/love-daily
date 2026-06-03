@@ -129,9 +129,14 @@ async def get_achievements(
 @router.post("/unlock-achievement")
 async def unlock_achievement(
     achievement_name: str = Query(...),
+    request: Request = None,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    # 仅允许系统内部调用（通过内部密钥头验证）
+    internal_key = request.headers.get("X-Internal-Key") if request else None
+    if not INTERNAL_API_KEY or internal_key != INTERNAL_API_KEY:
+        return error_response(403, "此接口仅限系统内部调用")
     achievement = db.query(Achievement).filter(
         Achievement.user_id == current_user.id,
         Achievement.achievement_name == achievement_name
@@ -267,14 +272,18 @@ async def love_stats(
 
     today = date.today()
 
-    # 在一起天数
-    days_together = (today - current_user.created_at.date()).days if current_user.created_at else 0
+    # 在一起天数（优先使用 bind_time）
+    bind_date = current_user.bind_time.date() if current_user.bind_time else (current_user.created_at.date() if current_user.created_at else None)
+    days_together = (today - bind_date).days if bind_date else 0
 
     # 时光线数量
-    memory_count = db.query(Memory).filter(
-        (Memory.user_id == current_user.id) |
-        (current_user.lover_id and (Memory.user_id == current_user.lover_id))
-    ).count() if current_user.lover_id else db.query(Memory).filter(Memory.user_id == current_user.id).count()
+    if current_user.lover_id:
+        memory_count = db.query(Memory).filter(
+            (Memory.user_id == current_user.id) |
+            (Memory.user_id == current_user.lover_id)
+        ).count()
+    else:
+        memory_count = db.query(Memory).filter(Memory.user_id == current_user.id).count()
 
     # 纪念日数量
     anniversary_count = db.query(Anniversary).filter(
@@ -365,3 +374,165 @@ def check_diary_achievements(user_id: int, db: Session):
         if my_today and lover_today:
             try_unlock_achievement(user_id, "灵魂共鸣", db)
             try_unlock_achievement(user.lover_id, "灵魂共鸣", db)
+
+
+@router.get("/milestones")
+async def get_milestones(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """获取恋爱里程碑信息"""
+    from datetime import date as date_type, timedelta
+
+    today = date_type.today()
+    # 优先使用 bind_time（情侣绑定时间），回退到 created_at
+    bind_date = current_user.bind_time.date() if hasattr(current_user, 'bind_time') and current_user.bind_time else current_user.created_at.date()
+    days_together = (today - bind_date).days if bind_date else 0
+
+    MILESTONE_DAYS = [100, 200, 365, 500, 730, 1000]
+
+    milestones = []
+    for m in MILESTONE_DAYS:
+        days_left = m - days_together
+        milestone_date = bind_date + timedelta(days=m)
+        milestones.append({
+            "days": m,
+            "label": f"在一起{m}天",
+            "days_left": max(0, days_left),
+            "achieved": days_together >= m,
+            "date": milestone_date.isoformat()
+        })
+
+    next_milestone = next((m for m in milestones if not m["achieved"]), None)
+
+    return success_response(data={
+        "days_together": days_together,
+        "milestones": milestones,
+        "next_milestone": next_milestone
+    })
+
+
+@router.get("/today-summary")
+async def today_summary(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """首页今日信息聚合"""
+    from datetime import date as date_type, timedelta
+    from sqlalchemy import extract, func
+    from app.models import Memory, Anniversary, Whisper, Todo, MoodDiary, Greeting
+
+    today = date_type.today()
+    result = {}
+
+    # 1. 今日回忆（On This Day）
+    on_this_day = db.query(Memory).filter(
+        Memory.event_time != None,
+        extract('month', Memory.event_time) == today.month,
+        extract('day', Memory.event_time) == today.day,
+        Memory.event_time < datetime(today.year, today.month, today.day)
+    )
+    if current_user.lover_id:
+        on_this_day = on_this_day.filter(
+            (Memory.user_id == current_user.id) | (Memory.user_id == current_user.lover_id)
+        )
+    else:
+        on_this_day = on_this_day.filter(Memory.user_id == current_user.id)
+
+    memories = on_this_day.limit(3).all()
+    result["on_this_day"] = [
+        {
+            "id": m.id,
+            "title": m.title,
+            "years_ago": today.year - m.event_time.year,
+            "event_time": m.event_time.strftime("%Y-%m-%d")
+        }
+        for m in memories
+    ]
+
+    # 2. 今日纪念日
+    anniversaries = db.query(Anniversary).filter(Anniversary.is_yearly == True)
+    if current_user.lover_id:
+        anniversaries = anniversaries.filter(
+            (Anniversary.user_id == current_user.id) | (Anniversary.user_id == current_user.lover_id)
+        )
+    else:
+        anniversaries = anniversaries.filter(Anniversary.user_id == current_user.id)
+
+    all_anniv = anniversaries.all()
+    today_anniv = []
+    for a in all_anniv:
+        if a.target_date.month == today.month and a.target_date.day == today.day:
+            years = today.year - a.target_date.year
+            today_anniv.append({"id": a.id, "title": a.title, "years": years})
+    result["today_anniversary"] = today_anniv
+
+    # 3. 未读悄悄话数量
+    unread_whispers = 0
+    if current_user.lover_id:
+        unread_whispers = db.query(Whisper).filter(
+            Whisper.receiver_id == current_user.id,
+            Whisper.sender_id == current_user.lover_id,
+            Whisper.is_read == False,
+            Whisper.send_time.isnot(None)
+        ).count()
+    result["unread_whispers"] = unread_whispers
+
+    # 4. TA今天的心情
+    partner_mood = None
+    if current_user.lover_id:
+        today_diary = db.query(MoodDiary).filter(
+            MoodDiary.user_id == current_user.lover_id,
+            MoodDiary.publish_status == "published",
+            MoodDiary.diary_date == today
+        ).first()
+        if today_diary:
+            partner_mood = {
+                "mood_type": today_diary.mood_type,
+                "mood_intensity": today_diary.mood_intensity,
+                "content_preview": (today_diary.content or "")[:50]
+            }
+    result["partner_mood"] = partner_mood
+
+    # 5. 今日待办
+    pending_todos = db.query(Todo).filter(
+        Todo.status == "pending",
+        Todo.deadline != None,
+        func.date(Todo.deadline) == today
+    )
+    if current_user.lover_id:
+        pending_todos = pending_todos.filter(
+            (Todo.user_id == current_user.id) |
+            ((Todo.user_id == current_user.lover_id) & (Todo.type == "couple"))
+        )
+    else:
+        pending_todos = pending_todos.filter(Todo.user_id == current_user.id)
+
+    todos = pending_todos.limit(5).all()
+    result["today_todos"] = [
+        {"id": t.id, "title": t.title, "type": t.type}
+        for t in todos
+    ]
+
+    # 6. 早安晚安状态
+    my_greetings = db.query(Greeting).filter(
+        Greeting.sender_id == current_user.id,
+        Greeting.greeting_date == today
+    ).all()
+    partner_greetings = {}
+    if current_user.lover_id:
+        pg = db.query(Greeting).filter(
+            Greeting.sender_id == current_user.lover_id,
+            Greeting.receiver_id == current_user.id,
+            Greeting.greeting_date == today
+        ).all()
+        partner_greetings = {g.type: True for g in pg}
+
+    result["greetings"] = {
+        "my_morning": any(g.type == "morning" for g in my_greetings),
+        "my_evening": any(g.type == "evening" for g in my_greetings),
+        "partner_morning": partner_greetings.get("morning", False),
+        "partner_evening": partner_greetings.get("evening", False)
+    }
+
+    return success_response(data=result)

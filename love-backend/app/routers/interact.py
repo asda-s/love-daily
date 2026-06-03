@@ -6,17 +6,18 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import func, and_, extract
+from sqlalchemy.exc import IntegrityError
 from datetime import datetime, date, timedelta
 from typing import Optional, List
 
 from app.database import get_db
 from app.models import (
     User, CheckinProject, CheckinRecord, Benefit, ExchangeRecord,
-    Emotion, Bill
+    Emotion, Bill, Greeting, Notification
 )
 from app.schemas import (
     CheckinProjectCreate, CheckinCreate, BenefitCreate, BenefitUpdate,
-    EmotionCreate, BillCreate, BillUpdate
+    EmotionCreate, BillCreate, BillUpdate, GreetingCreate
 )
 from app.security import get_current_user, check_couple_permission
 from app.response import success_response, error_response
@@ -393,6 +394,11 @@ async def exchange_benefit(
     if not benefit:
         return error_response(404, "福利不存在")
 
+    # 权限校验：只能兑换自己或伴侣创建的福利
+    if benefit.user_id != current_user.id:
+        if not current_user.lover_id or benefit.user_id != current_user.lover_id:
+            return error_response(403, "无权兑换此福利")
+
     # 使用 SELECT FOR UPDATE 锁定用户行，防止并发扣分
     user = db.query(User).filter(User.id == current_user.id).with_for_update().first()
     if user.heart_points < benefit.points:
@@ -506,20 +512,24 @@ async def create_emotion(
         warm_reply = random.choice(warm_messages)
 
     # 如果选择同步给情侣，发送通知
-    notification = None
     if data.is_sync and current_user.lover_id:
-        from app.models import Notification
-        emotion_labels = {"sad": "难过", "angry": "生气", "wronged": "委屈", "anxious": "焦虑",
-                          "happy": "开心", "calm": "平静", "excited": "兴奋"}
-        label = emotion_labels.get(data.emotion_type, data.emotion_type)
-        notification = Notification(
-            user_id=current_user.lover_id,
-            title=f"你的情侣刚刚发布了{label}情绪",
-            content=data.content[:50] + "..." if len(data.content) > 50 else data.content,
-            type="emotion"
-        )
-        db.add(notification)
-        db.commit()
+        try:
+            from app.models import Notification
+            emotion_labels = {"sad": "难过", "angry": "生气", "wronged": "委屈", "anxious": "焦虑",
+                              "happy": "开心", "calm": "平静", "excited": "兴奋"}
+            label = emotion_labels.get(data.emotion_type, data.emotion_type)
+            notification = Notification(
+                user_id=current_user.lover_id,
+                title=f"你的情侣刚刚发布了{label}情绪",
+                content=data.content[:50] + "..." if len(data.content) > 50 else data.content,
+                type="emotion"
+            )
+            db.add(notification)
+            db.commit()
+        except Exception:
+            db.rollback()
+            import logging
+            logging.getLogger(__name__).warning("情绪通知创建失败", exc_info=True)
 
     return success_response({
         "id": emotion.id,
@@ -536,15 +546,13 @@ async def list_emotions(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    query = db.query(Emotion).filter(
-        Emotion.user_id == current_user.id
-    )
-
     if current_user.lover_id:
         query = db.query(Emotion).filter(
             (Emotion.user_id == current_user.id) |
             ((Emotion.user_id == current_user.lover_id) & (Emotion.is_sync == True))
         )
+    else:
+        query = db.query(Emotion).filter(Emotion.user_id == current_user.id)
 
     emotions = query.order_by(Emotion.created_at.desc()).limit(100).all()
 
@@ -637,6 +645,8 @@ async def create_bill(
 async def list_bills(
     year: Optional[int] = Query(None),
     month: Optional[int] = Query(None),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=200),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -653,7 +663,8 @@ async def list_bills(
             extract('month', Bill.pay_time) == month
         )
 
-    bills = query.order_by(Bill.pay_time.desc()).all()
+    total = query.count()
+    bills = query.order_by(Bill.pay_time.desc()).offset((page - 1) * page_size).limit(page_size).all()
 
     # 批量查询用户信息
     user_ids = list(set(b.user_id for b in bills))
@@ -676,7 +687,7 @@ async def list_bills(
             "created_at": str(b.created_at)
         })
 
-    return success_response(result)
+    return success_response({"list": result, "total": total, "page": page, "page_size": page_size})
 
 
 @router.put("/bill/{bill_id}")
@@ -784,6 +795,111 @@ async def monthly_summary(
             "balance": aa_balance,
             "balance_desc": f"伴侣应付给你{abs(aa_balance)}元" if aa_balance > 0 else (f"你应付给伴侣{abs(aa_balance)}元" if aa_balance < 0 else "已平账")
         }
+    })
+
+
+# ==================== 早安晚安 ====================
+
+@router.post("/greeting")
+async def create_greeting(
+    data: GreetingCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """发送早安/晚安问候"""
+    if not current_user.lover_id:
+        return error_response(400, "请先绑定情侣")
+
+    today = date.today()
+
+    # 防重复
+    existing = db.query(Greeting).filter(
+        Greeting.sender_id == current_user.id,
+        Greeting.greeting_date == today,
+        Greeting.type == data.type
+    ).first()
+    if existing:
+        type_label = "早安" if data.type == "morning" else "晚安"
+        return error_response(400, f"今天已经说过{type_label}了")
+
+    greeting = Greeting(
+        sender_id=current_user.id,
+        receiver_id=current_user.lover_id,
+        type=data.type,
+        greeting_date=today
+    )
+    db.add(greeting)
+
+    try:
+        db.flush()
+    except IntegrityError:
+        db.rollback()
+        type_label = "早安" if data.type == "morning" else "晚安"
+        return error_response(400, f"今天已经说过{type_label}了")
+
+    # 奖励心动分
+    current_user.heart_points += 2
+
+    # 创建通知
+    type_label = "早安" if data.type == "morning" else "晚安"
+    notification = Notification(
+        user_id=current_user.lover_id,
+        title=f"TA跟你说{type_label}了",
+        content=f"{current_user.nickname or 'TA'}跟你说{type_label}啦~",
+        type="greeting"
+    )
+    db.add(notification)
+    db.commit()
+
+    # WebSocket 推送
+    try:
+        from app.routers.websocket import broadcast_to_user
+        await broadcast_to_user(current_user.lover_id, {
+            "type": "greeting",
+            "data": {
+                "sender_id": current_user.id,
+                "sender_nickname": current_user.nickname or "TA",
+                "type": data.type
+            }
+        })
+    except Exception:
+        pass
+
+    return success_response(data={
+        "type": data.type,
+        "points_earned": 2,
+        "total_points": current_user.heart_points
+    }, message=f"{type_label}成功")
+
+
+@router.get("/greeting/today")
+async def get_today_greetings(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """获取今日早安晚安状态"""
+    today = date.today()
+
+    my_greetings = db.query(Greeting).filter(
+        Greeting.sender_id == current_user.id,
+        Greeting.greeting_date == today
+    ).all()
+    my_types = {g.type for g in my_greetings}
+
+    partner_greetings = {}
+    if current_user.lover_id:
+        partner_g = db.query(Greeting).filter(
+            Greeting.sender_id == current_user.lover_id,
+            Greeting.receiver_id == current_user.id,
+            Greeting.greeting_date == today
+        ).all()
+        partner_greetings = {g.type: True for g in partner_g}
+
+    return success_response(data={
+        "my_morning": "morning" in my_types,
+        "my_evening": "evening" in my_types,
+        "partner_morning": partner_greetings.get("morning", False),
+        "partner_evening": partner_greetings.get("evening", False)
     })
 
 

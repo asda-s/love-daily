@@ -11,6 +11,12 @@ export const useGlobalStore = defineStore('global', () => {
   const isLoading = ref(false)
   const isNetworkConnected = ref(true)
   const systemInfo = ref(null)
+
+  // 庆祝动画状态
+  const showCelebration = ref(false)
+  const celebrationType = ref('confetti')
+  const celebrationTitle = ref('')
+  const celebrationSubtitle = ref('')
   
   /**
    * 设置加载状态
@@ -53,15 +59,41 @@ export const useGlobalStore = defineStore('global', () => {
     const statusBarHeight = getStatusBarHeight()
     return statusBarHeight + 44
   }
+
+  /**
+   * 触发庆祝动画
+   */
+  function celebrate(type, title, subtitle = '') {
+    celebrationType.value = type
+    celebrationTitle.value = title
+    celebrationSubtitle.value = subtitle
+    showCelebration.value = true
+    try {
+      uni.vibrateShort({ type: 'heavy' })
+    } catch (e) {}
+  }
+
+  /**
+   * 关闭庆祝动画
+   */
+  function dismissCelebration() {
+    showCelebration.value = false
+  }
   
   return {
     isLoading,
     isNetworkConnected,
     systemInfo,
+    showCelebration,
+    celebrationType,
+    celebrationTitle,
+    celebrationSubtitle,
     setLoading,
     setNetworkStatus,
     getSystemInfo,
     getStatusBarHeight,
-    getNavBarHeight
+    getNavBarHeight,
+    celebrate,
+    dismissCelebration
   }
 })

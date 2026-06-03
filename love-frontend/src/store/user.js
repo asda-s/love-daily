@@ -6,11 +6,12 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { get, post, put } from '@/utils/request'
-import { 
+import {
   getToken, setToken, removeToken,
   getUserInfo, setUserInfo, removeUserInfo,
-  clearAuth 
+  clearAuth
 } from '@/utils/auth'
+import { connect as wsConnect, disconnect as wsDisconnect } from '@/utils/websocket'
 
 export const useUserStore = defineStore('user', () => {
   // 状态
@@ -33,6 +34,7 @@ export const useUserStore = defineStore('user', () => {
     if (!res?.data?.token) throw new Error('登录响应数据异常')
     token.value = res.data.token
     setToken(res.data.token)
+    wsConnect(res.data.token)
     await getUserInfoFromServer()
     return res
   }
@@ -96,6 +98,7 @@ export const useUserStore = defineStore('user', () => {
     const res = await post('/user/unbind')
     await getUserInfoFromServer()
     loverInfo.value = null
+    uni.removeStorageSync('invite_dialog_skipped')
     return res
   }
   
@@ -103,6 +106,7 @@ export const useUserStore = defineStore('user', () => {
    * 退出登录
    */
   function logout() {
+    wsDisconnect()
     token.value = null
     userInfo.value = null
     loverInfo.value = null

@@ -41,7 +41,7 @@
             :key="index" 
             class="image-item"
           >
-            <image class="preview" :src="img" mode="aspectFill"></image>
+            <image class="preview" :src="resolveImageUrl(img)" mode="aspectFill"></image>
             <view class="delete-btn" @click="deleteImage(index)">
               <uni-icons type="clear" size="20" color="#FF69B4"></uni-icons>
             </view>
@@ -79,7 +79,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { get, post, put } from '@/utils/request'
-import { formatDate } from '@/utils/common'
+import { formatDate, resolveImageUrl } from '@/utils/common'
 import { getToken } from '@/utils/auth'
 
 const editId = ref(null)

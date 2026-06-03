@@ -4,15 +4,12 @@
     <view v-if="unreadCount > 0" class="unread-banner">
       <text class="unread-banner-text">{{ unreadCount }}条未读悄悄话</text>
     </view>
-    <!-- 发送按钮 -->
-    <view class="send-btn" @click="goSend">
-      <uni-icons type="compose" size="24" color="#FFFFFF"></uni-icons>
-    </view>
 
     <!-- 悄悄话列表 -->
-    <scroll-view 
-      class="whisper-list" 
-      scroll-y 
+    <scroll-view
+      class="whisper-list"
+      scroll-y
+      :scroll-into-view="scrollTarget"
       @scrolltolower="loadMore"
     >
       <view v-if="list.length === 0" class="empty-state">
@@ -21,17 +18,18 @@
         <text class="empty-tip">给TA发送一条悄悄话吧</text>
       </view>
 
-      <view 
-        v-for="item in list" 
-        :key="item.id" 
+      <view
+        v-for="item in list"
+        :key="item.id"
+        :id="'msg-' + item.id"
         class="whisper-item"
         :class="{ 'is-self': item.is_self }"
         @click="markRead(item)"
       >
         <view v-if="!item.is_self" class="avatar-wrapper">
-          <image 
-            class="avatar" 
-            :src="item.sender_avatar || '/static/default-avatar.png'" 
+          <image
+            class="avatar"
+            :src="resolveImageUrl(item.sender_avatar)"
             mode="aspectFill"
           ></image>
         </view>
@@ -41,16 +39,16 @@
             <text class="message-content">{{ item.content }}</text>
           </view>
           <view class="message-info">
-            <text class="message-time">{{ item.send_time }}</text>
+            <text class="message-time">{{ formatChatTime(item.send_time) }}</text>
             <text v-if="item.is_self && item.is_read" class="read-status">已读</text>
             <text v-if="item.is_self && !item.is_read" class="read-status unread">未读</text>
           </view>
         </view>
 
         <view v-if="item.is_self" class="avatar-wrapper">
-          <image 
-            class="avatar" 
-            :src="userStore.userInfo?.avatar || '/static/default-avatar.png'" 
+          <image
+            class="avatar"
+            :src="resolveImageUrl(userStore.userInfo?.avatar)"
             mode="aspectFill"
           ></image>
         </view>
@@ -61,16 +59,59 @@
         <text>加载中...</text>
       </view>
     </scroll-view>
+
+    <!-- 输入状态指示器 -->
+    <view v-if="partnerTyping" class="typing-indicator">
+      <text class="typing-text">对方正在输入</text>
+      <view class="typing-dots">
+        <view class="dot dot1"></view>
+        <view class="dot dot2"></view>
+        <view class="dot dot3"></view>
+      </view>
+    </view>
+
+    <!-- 底部输入栏 -->
+    <view class="input-bar">
+      <view class="schedule-btn" @click="goSchedule">
+        <uni-icons type="clock" size="20" color="#FF69B4"></uni-icons>
+      </view>
+      <input
+        class="msg-input"
+        v-model="inputText"
+        placeholder="说点悄悄话..."
+        confirm-type="send"
+        @confirm="sendMessage"
+        @input="onTyping"
+      />
+      <view class="send-btn-small" :class="{ active: inputText.trim() }" @click="sendMessage">
+        <text class="send-text">发送</text>
+      </view>
+    </view>
   </view>
 </template>
 
 <script setup>
-import { ref, onUnmounted } from 'vue'
+import { ref, onUnmounted, nextTick } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { get, put } from '@/utils/request'
+import { get, put, post } from '@/utils/request'
 import { useUserStore } from '@/store/user'
+import { resolveImageUrl } from '@/utils/common'
+import { subscribe, unsubscribe, send as wsSend, isConnected } from '@/utils/websocket'
 
 const userStore = useUserStore()
+
+// 格式化聊天时间：今天只显示时分，否则显示月日时分
+function formatChatTime(timeStr) {
+  if (!timeStr) return ''
+  const today = new Date()
+  const d = new Date(timeStr.replace(/-/g, '/'))
+  const isToday = d.getFullYear() === today.getFullYear() &&
+    d.getMonth() === today.getMonth() &&
+    d.getDate() === today.getDate()
+  const pad = n => String(n).padStart(2, '0')
+  if (isToday) return `${pad(d.getHours())}:${pad(d.getMinutes())}`
+  return `${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
 
 // 列表数据
 const list = ref([])
@@ -79,7 +120,12 @@ const pageSize = ref(20)
 const total = ref(0)
 const loading = ref(false)
 const unreadCount = ref(0)
-let pollTimer = null
+const scrollTarget = ref('')
+const inputText = ref('')
+const partnerTyping = ref(false)
+
+let typingTimer = null
+let typingClearTimer = null
 
 /**
  * 获取悄悄话列表
@@ -110,14 +156,23 @@ async function fetchList() {
  */
 function loadMore() {
   if (list.value.length >= total.value || loading.value) return
+  // 保存当前最后一条消息的id，加载后保持滚动位置
+  const lastId = list.value.length > 0 ? list.value[list.value.length - 1].id : null
   page.value++
-  fetchList()
+  fetchList().then(() => {
+    if (lastId) {
+      scrollTarget.value = ''
+      nextTick(() => {
+        scrollTarget.value = 'msg-' + lastId
+      })
+    }
+  })
 }
 
 /**
- * 跳转发送页
+ * 跳转定时发送页
  */
-function goSend() {
+function goSchedule() {
   uni.navigateTo({ url: '/pages/memory/whisper-send' })
 }
 
@@ -126,75 +181,178 @@ function goSend() {
  */
 async function markRead(item) {
   if (item.is_self || item.is_read) return
-  
+
   try {
     await put(`/memory/whisper/${item.id}/read`)
     item.is_read = true
+    if (unreadCount.value > 0) unreadCount.value--
   } catch (e) {
     console.error('标记已读失败', e)
-    uni.showToast({ title: '操作失败，请重试', icon: 'none' })
   }
 }
+
+/**
+ * 发送悄悄话
+ */
+async function sendMessage() {
+  const text = inputText.value.trim()
+  if (!text) return
+
+  inputText.value = ''
+  clearTyping()
+
+  // 乐观更新：立即添加到本地列表
+  const optimisticMsg = {
+    id: 'temp-' + Date.now(),
+    sender_id: userStore.userInfo?.id,
+    sender_nickname: userStore.userInfo?.nickname,
+    sender_avatar: userStore.userInfo?.avatar,
+    content: text,
+    send_time: new Date().toLocaleString('zh-CN', { hour12: false }),
+    is_read: false,
+    is_self: true
+  }
+  list.value.unshift(optimisticMsg)
+  scrollToBottom()
+
+  try {
+    const res = await post('/memory/whisper', { content: text })
+    // 用服务器返回的 id 替换临时 id
+    const idx = list.value.findIndex(m => m.id === optimisticMsg.id)
+    if (idx !== -1 && res.data?.id) {
+      list.value[idx].id = res.data.id
+    }
+  } catch (e) {
+    // 发送失败，移除乐观消息
+    const idx = list.value.findIndex(m => m.id === optimisticMsg.id)
+    if (idx !== -1) list.value.splice(idx, 1)
+    uni.showToast({ title: '发送失败', icon: 'none' })
+  }
+}
+
+/**
+ * 输入事件 - 发送输入状态
+ */
+function onTyping() {
+  if (!isConnected()) return
+  wsSend(JSON.stringify({ type: 'typing', data: { is_typing: true } }))
+
+  clearTimeout(typingTimer)
+  typingTimer = setTimeout(() => {
+    clearTyping()
+  }, 2000)
+}
+
+function clearTyping() {
+  clearTimeout(typingTimer)
+  if (isConnected()) {
+    wsSend(JSON.stringify({ type: 'typing', data: { is_typing: false } }))
+  }
+}
+
+/**
+ * 收到新悄悄话（WebSocket 推送）
+ */
+function onNewWhisper(data) {
+  // 仅按 id 去重
+  if (list.value.some(m => m.id === data.id)) return
+
+  // 乐观更新：用服务器 id 替换临时 id
+  const tempIdx = list.value.findIndex(m =>
+    m.is_self && m.content === data.content && m.sender_id === data.sender_id && String(m.id).startsWith('temp-')
+  )
+  if (tempIdx !== -1) {
+    list.value[tempIdx].id = data.id
+    return
+  }
+
+  const msg = {
+    id: data.id,
+    sender_id: data.sender_id,
+    sender_nickname: data.sender_nickname,
+    sender_avatar: data.sender_avatar,
+    content: data.content,
+    send_time: data.send_time,
+    is_read: false,
+    is_self: data.sender_id === userStore.userInfo?.id
+  }
+  list.value.unshift(msg)
+
+  if (!msg.is_self) {
+    unreadCount.value++
+    // 自动标记已读（因为正在查看）
+    markRead(msg)
+  }
+
+  scrollToBottom()
+}
+
+/**
+ * 收到输入状态（WebSocket 推送）
+ */
+function onTypingEvent(data) {
+  if (data.user_id !== userStore.loverInfo?.id) return
+  partnerTyping.value = data.is_typing
+
+  clearTimeout(typingClearTimer)
+  if (data.is_typing) {
+    // 3秒无更新自动清除
+    typingClearTimer = setTimeout(() => {
+      partnerTyping.value = false
+    }, 3000)
+  }
+}
+
+/**
+ * 滚动到底部
+ */
+function scrollToBottom() {
+  nextTick(() => {
+    if (list.value.length > 0) {
+      scrollTarget.value = ''
+      nextTick(() => {
+        scrollTarget.value = 'msg-' + list.value[0].id
+      })
+    }
+  })
+}
+
+let wsSubscribed = false
+let dataLoaded = false
 
 onShow(() => {
-  list.value = []
-  page.value = 1
-  total.value = 0
-  fetchList()
-  startPolling()
+  // 首次进入才清空并加载，避免切换tab时闪烁
+  if (!dataLoaded) {
+    list.value = []
+    page.value = 1
+    total.value = 0
+    fetchList()
+    dataLoaded = true
+  }
+
+  // 订阅 WebSocket 事件（避免重复订阅）
+  if (!wsSubscribed) {
+    subscribe('whisper', onNewWhisper)
+    subscribe('typing', onTypingEvent)
+    wsSubscribed = true
+  }
 })
 
-function startPolling() {
-  stopPolling()
-  pollTimer = setInterval(async () => {
-    try {
-      const res = await get('/memory/whisper', { page: 1, page_size: 1 }, { useLoading: false, showError: false })
-      if (res && res.data) {
-        const newUnread = res.data.unread_count || 0
-        if (newUnread > unreadCount.value) {
-          list.value = []
-          page.value = 1
-          total.value = 0
-          await fetchList()
-        }
-        unreadCount.value = newUnread
-      }
-    } catch (e) {
-      // silent fail for polling
-    }
-  }, 10000)
-}
-
-function stopPolling() {
-  if (pollTimer) {
-    clearInterval(pollTimer)
-    pollTimer = null
-  }
-}
-
-onUnmounted(() => { stopPolling() })
+onUnmounted(() => {
+  unsubscribe('whisper', onNewWhisper)
+  unsubscribe('typing', onTypingEvent)
+  wsSubscribed = false
+  clearTyping()
+  clearTimeout(typingClearTimer)
+})
 </script>
 
 <style lang="scss" scoped>
 .whisper-container {
   min-height: 100vh;
   background: #FFF5F9;
-  position: relative;
-}
-
-.send-btn {
-  position: fixed;
-  right: 30rpx;
-  bottom: 120rpx;
-  width: 100rpx;
-  height: 100rpx;
-  background: #FF69B4;
-  border-radius: 50%;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4rpx 16rpx rgba(255, 107, 157, 0.4);
-  z-index: 100;
+  flex-direction: column;
 }
 
 .unread-banner {
@@ -211,9 +369,9 @@ onUnmounted(() => { stopPolling() })
 }
 
 .whisper-list {
-  height: 100vh;
+  flex: 1;
   padding: 20rpx;
-  padding-bottom: 140rpx;
+  padding-bottom: 20rpx;
 }
 
 .empty-state {
@@ -308,5 +466,91 @@ onUnmounted(() => { stopPolling() })
   padding: 24rpx;
   font-size: 24rpx;
   color: #999999;
+}
+
+/* 输入状态指示器 */
+.typing-indicator {
+  display: flex;
+  align-items: center;
+  padding: 8rpx 30rpx 4rpx;
+  gap: 8rpx;
+}
+
+.typing-text {
+  font-size: 22rpx;
+  color: #999;
+}
+
+.typing-dots {
+  display: flex;
+  gap: 6rpx;
+}
+
+.dot {
+  width: 10rpx;
+  height: 10rpx;
+  border-radius: 50%;
+  background: #FF69B4;
+  animation: dot-bounce 1.4s infinite ease-in-out both;
+}
+
+.dot1 { animation-delay: 0s; }
+.dot2 { animation-delay: 0.2s; }
+.dot3 { animation-delay: 0.4s; }
+
+@keyframes dot-bounce {
+  0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+  40% { transform: scale(1); opacity: 1; }
+}
+
+/* 底部输入栏 */
+.input-bar {
+  display: flex;
+  align-items: center;
+  padding: 16rpx 20rpx;
+  padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
+  background: #FFFFFF;
+  border-top: 1rpx solid #F0F0F0;
+  gap: 16rpx;
+}
+
+.schedule-btn {
+  width: 64rpx;
+  height: 64rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.msg-input {
+  flex: 1;
+  height: 72rpx;
+  background: #F5F5F5;
+  border-radius: 36rpx;
+  padding: 0 28rpx;
+  font-size: 28rpx;
+  color: #333;
+}
+
+.send-btn-small {
+  width: 120rpx;
+  height: 64rpx;
+  background: #DDD;
+  border-radius: 32rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.2s;
+
+  &.active {
+    background: #FF69B4;
+  }
+}
+
+.send-text {
+  font-size: 26rpx;
+  color: #FFF;
 }
 </style>

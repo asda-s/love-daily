@@ -69,6 +69,7 @@
 import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { get, put, del } from '@/utils/request'
+import { useGlobalStore } from '@/store/global'
 
 // 当前Tab
 const currentTab = ref('pending')
@@ -150,11 +151,14 @@ function handleComplete(id) {
     success: async (res) => {
       if (res.confirm) {
         try {
+          const now = new Date()
+          const pad = n => String(n).padStart(2, '0')
+          const localTime = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`
           await put(`/memory/wish/${id}/complete`, {
-            complete_time: new Date().toISOString().replace('T', ' ').substring(0, 19)
+            complete_time: localTime
           })
-          uni.vibrateShort({ type: 'heavy' })
-          uni.showToast({ title: '恭喜完成心愿！', icon: 'success' })
+          const globalStore = useGlobalStore()
+          globalStore.celebrate('hearts', '心愿达成！', '')
           fetchList()
         } catch (e) {
           console.error('操作失败', e)

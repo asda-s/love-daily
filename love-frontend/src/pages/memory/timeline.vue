@@ -28,9 +28,9 @@
       >
         <view class="card-header">
           <view class="user-info">
-            <image 
-              class="avatar" 
-              :src="item.avatar || '/static/default-avatar.png'" 
+            <image
+              class="avatar"
+              :src="resolveImageUrl(item.avatar) || '/static/default-avatar.png'"
               mode="aspectFill"
             ></image>
             <text class="nickname">{{ item.nickname }}</text>
@@ -44,11 +44,11 @@
           
           <!-- 图片展示 -->
           <view v-if="item.images && item.images.length > 0" class="image-grid">
-            <image 
-              v-for="(img, index) in item.images.slice(0, 3)" 
+            <image
+              v-for="(img, index) in item.images.slice(0, 3)"
               :key="index"
               class="preview-image"
-              :src="img"
+              :src="resolveImageUrl(img)"
               mode="aspectFill"
               @click.stop="previewImage(item.images, index)"
             ></image>
@@ -76,6 +76,7 @@ import { ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { get } from '@/utils/request'
 import { useUserStore } from '@/store/user.js'
+import { resolveImageUrl } from '@/utils/common'
 import CustomTabbar from '@/components/custom-tabbar.vue'
 
 const userStore = useUserStore()
@@ -156,7 +157,7 @@ function goDetail(id) {
  */
 function previewImage(urls, index) {
   uni.previewImage({
-    urls: urls,
+    urls: urls.map(resolveImageUrl),
     current: index
   })
 }
@@ -166,7 +167,9 @@ onShow(() => {
     uni.reLaunch({ url: '/pages/user/login' })
     return
   }
-  fetchList()
+  page.value = 1
+  noMore.value = false
+  fetchList(true)
 })
 </script>
 

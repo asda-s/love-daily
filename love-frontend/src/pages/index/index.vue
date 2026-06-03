@@ -32,15 +32,15 @@
           <text class="bell-icon">🔔</text>
           <view v-if="unreadNotifications > 0" class="bell-badge">{{ unreadNotifications > 9 ? '9+' : unreadNotifications }}</view>
         </view>
-        <image class="header-avatar" :src="userStore.userInfo?.avatar || '/static/default-avatar.png'" mode="aspectFill" @click="goProfile" />
+        <image class="header-avatar" :src="resolveImageUrl(userStore.userInfo?.avatar) || '/static/default-avatar.png'" mode="aspectFill" @click="goProfile" />
       </view>
     </view>
 
     <view class="couple-card" v-if="userStore.isBindLover" @click="goProfile">
       <view class="couple-avatars">
-        <image class="avatar" :src="userStore.userInfo?.avatar || '/static/default-avatar.png'" mode="aspectFill" />
+        <image class="avatar" :src="resolveImageUrl(userStore.userInfo?.avatar) || '/static/default-avatar.png'" mode="aspectFill" />
         <text class="heart-icon">🎀</text>
-        <image class="avatar" :src="userStore.loverInfo?.avatar || '/static/default-avatar.png'" mode="aspectFill" />
+        <image class="avatar" :src="resolveImageUrl(userStore.loverInfo?.avatar) || '/static/default-avatar.png'" mode="aspectFill" />
       </view>
       <view class="couple-names">
         <text>{{ userStore.userInfo?.nickname || '我' }}</text>
@@ -81,6 +81,73 @@
       <view class="stats-bottom">
         <text class="stats-expense">本月共同支出 ¥{{ stats.month_expense || 0 }}</text>
         <text class="stats-anniversary">{{ stats.anniversary_count || 0 }} 个纪念日</text>
+      </view>
+    </view>
+
+    <!-- 早安晚安 -->
+    <view class="greeting-card" v-if="userStore.isBindLover">
+      <view class="greeting-row">
+        <view class="greeting-btn" :class="{ done: todaySummary.greetings?.my_morning }"
+          @click="sayGreeting('morning')">
+          <text class="greeting-emoji">🌅</text>
+          <text class="greeting-label">{{ todaySummary.greetings?.my_morning ? '已说早安' : '说早安' }}</text>
+        </view>
+        <view class="greeting-btn" :class="{ done: todaySummary.greetings?.my_evening }"
+          @click="sayGreeting('evening')">
+          <text class="greeting-emoji">🌙</text>
+          <text class="greeting-label">{{ todaySummary.greetings?.my_evening ? '已说晚安' : '说晚安' }}</text>
+        </view>
+      </view>
+      <view v-if="todaySummary.greetings?.partner_morning || todaySummary.greetings?.partner_evening" class="partner-greeting">
+        <text v-if="todaySummary.greetings?.partner_morning">TA已经跟你说早安了 ☀️</text>
+        <text v-if="todaySummary.greetings?.partner_evening">TA已经跟你说晚安了 🌙</text>
+      </view>
+    </view>
+
+    <!-- 今日信息聚合 -->
+    <view class="today-section" v-if="userStore.isBindLover">
+      <view v-if="todaySummary.on_this_day?.length" class="info-card" @click="go('/pages/memory/timeline')">
+        <text class="info-icon">📷</text>
+        <view class="info-content">
+          <text class="info-title">今日回忆</text>
+          <text class="info-desc" v-for="m in todaySummary.on_this_day" :key="m.id">
+            {{ m.years_ago }}年前的今天：{{ m.title }}
+          </text>
+        </view>
+      </view>
+
+      <view v-if="todaySummary.today_anniversary?.length" class="info-card anniversary-card">
+        <text class="info-icon">🎂</text>
+        <view class="info-content">
+          <text class="info-title">今日纪念日</text>
+          <text class="info-desc" v-for="a in todaySummary.today_anniversary" :key="a.id">
+            {{ a.title }} {{ a.years }}周年
+          </text>
+        </view>
+      </view>
+
+      <view v-if="todaySummary.unread_whispers > 0" class="info-card" @click="go('/pages/memory/whisper')">
+        <text class="info-icon">💌</text>
+        <view class="info-content">
+          <text class="info-title">{{ todaySummary.unread_whispers }}条未读悄悄话</text>
+          <text class="info-desc">点击查看</text>
+        </view>
+      </view>
+
+      <view v-if="todaySummary.partner_mood" class="info-card" @click="go('/pages/life/item')">
+        <text class="info-icon">{{ moodEmoji(todaySummary.partner_mood.mood_type) }}</text>
+        <view class="info-content">
+          <text class="info-title">TA今天的心情</text>
+          <text class="info-desc">{{ todaySummary.partner_mood.content_preview }}...</text>
+        </view>
+      </view>
+
+      <view v-if="todaySummary.today_todos?.length" class="info-card" @click="go('/pages/life/todo')">
+        <text class="info-icon">⏰</text>
+        <view class="info-content">
+          <text class="info-title">今日待办 ({{ todaySummary.today_todos.length }})</text>
+          <text class="info-desc" v-for="t in todaySummary.today_todos" :key="t.id">{{ t.title }}</text>
+        </view>
       </view>
     </view>
 
@@ -218,11 +285,13 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onUnmounted } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { useUserStore } from '@/store/user'
-import { get } from '@/utils/request'
-import { getLevelInfo } from '@/utils/common'
+import { get, post } from '@/utils/request'
+import { getLevelInfo, resolveImageUrl } from '@/utils/common'
+import { MOOD_CONFIG } from '@/utils/constants'
+import { subscribe, unsubscribe } from '@/utils/websocket'
 import CustomTabbar from '@/components/custom-tabbar.vue'
 
 const userStore = useUserStore()
@@ -235,6 +304,7 @@ const loveLevel = ref(1)
 const stats = ref({})
 const unreadWhispers = ref(0)
 const unreadNotifications = ref(0)
+const todaySummary = ref({})
 
 onShow(async () => {
   if (!userStore.isLoggedIn) {
@@ -252,19 +322,40 @@ onShow(async () => {
   if (!userStore.isBindLover) {
     const code = userStore.userInfo?.invite_code || uni.getStorageSync('invite_code')
     if (code) myInviteCode.value = code
-    showInviteDialog.value = true
+    const skipped = uni.getStorageSync('invite_dialog_skipped')
+    showInviteDialog.value = !skipped
   } else {
     showInviteDialog.value = false
+    uni.removeStorageSync('invite_dialog_skipped')
   }
   loadLoveData()
   loadUnreadWhispers()
   loadUnreadNotifications()
+  if (userStore.isBindLover) {
+    loadTodaySummary()
+    if (!wsSubscribed) {
+      subscribe('greeting', onGreetingEvent)
+      wsSubscribed = true
+    }
+  }
+})
+
+let wsSubscribed = false
+
+onUnmounted(() => {
+  unsubscribe('greeting', onGreetingEvent)
+  wsSubscribed = false
 })
 
 const togetherDays = computed(() => {
   const bindDate = userStore.userInfo?.bind_time
   if (!bindDate) return 0
-  return Math.floor((Date.now() - new Date(bindDate).getTime()) / 86400000)
+  // 解析为本地时间，避免时区偏移导致天数差1
+  const parts = bindDate.split(/[-T:\s]/)
+  const localDate = new Date(parts[0], parts[1] - 1, parts[2])
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  return Math.floor((today.getTime() - localDate.getTime()) / 86400000)
 })
 
 const levelName = computed(() => getLevelInfo(heartPoints.value).name)
@@ -274,20 +365,16 @@ const levelProgress = computed(() => {
 })
 
 async function loadLoveData() {
-  try {
-    const [overviewRes, statsRes] = await Promise.all([
-      get('/love/overview'),
-      get('/love/stats')
-    ])
-    if (overviewRes && overviewRes.data) {
-      loveLevel.value = overviewRes.data.level || 1
-      heartPoints.value = overviewRes.data.heart_points || 0
-    }
-    if (statsRes && statsRes.data) {
-      stats.value = statsRes.data
-    }
-  } catch (e) {
-    uni.showToast({ title: '加载失败', icon: 'none' })
+  const [overviewRes, statsRes] = await Promise.allSettled([
+    get('/love/overview'),
+    get('/love/stats')
+  ])
+  if (overviewRes.status === 'fulfilled' && overviewRes.value?.data) {
+    loveLevel.value = overviewRes.value.data.level || 1
+    heartPoints.value = overviewRes.value.data.heart_points || 0
+  }
+  if (statsRes.status === 'fulfilled' && statsRes.value?.data) {
+    stats.value = statsRes.value.data
   }
 }
 
@@ -313,6 +400,45 @@ async function loadUnreadNotifications() {
   }
 }
 
+async function loadTodaySummary() {
+  try {
+    const res = await get('/love/today-summary', {}, { useLoading: false, showError: false })
+    if (res && res.data) {
+      todaySummary.value = res.data
+    }
+  } catch (e) {
+    // silent
+  }
+}
+
+let greetingSending = false
+
+async function sayGreeting(type) {
+  if (greetingSending) return
+  if (type === 'morning' && todaySummary.value.greetings?.my_morning) return
+  if (type === 'evening' && todaySummary.value.greetings?.my_evening) return
+
+  greetingSending = true
+  try {
+    await post('/interact/greeting', { type })
+    const label = type === 'morning' ? '早安' : '晚安'
+    uni.showToast({ title: `${label}成功`, icon: 'none' })
+    loadTodaySummary()
+  } catch (e) {
+    uni.showToast({ title: e.message || '发送失败', icon: 'none' })
+  } finally {
+    greetingSending = false
+  }
+}
+
+function moodEmoji(type) {
+  return MOOD_CONFIG[type]?.emoji || '😊'
+}
+
+function onGreetingEvent(data) {
+  loadTodaySummary()
+}
+
 function copyCode() {
   uni.setClipboardData({
     data: myInviteCode.value,
@@ -336,6 +462,7 @@ async function bindLover() {
 
 function skipInvite() {
   showInviteDialog.value = false
+  uni.setStorageSync('invite_dialog_skipped', true)
 }
 
 const tabPages = ['/pages/index/index', '/pages/memory/timeline', '/pages/life/todo', '/pages/interact/checkin', '/pages/love/index']
@@ -470,6 +597,82 @@ function goNotification() {
     .stats-expense { font-size: 24rpx; color: #666; }
     .stats-anniversary { font-size: 24rpx; color: #999; }
   }
+}
+
+/* 早安晚安 */
+.greeting-card {
+  margin: 0 30rpx 20rpx;
+  background: #fff;
+  border-radius: 24rpx;
+  padding: 28rpx 30rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
+}
+.greeting-row {
+  display: flex;
+  gap: 20rpx;
+}
+.greeting-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  padding: 20rpx;
+  border-radius: 16rpx;
+  background: #FFF5F9;
+  border: 2rpx solid #FFE4EC;
+  transition: all 0.2s;
+  &:active { transform: scale(0.96); }
+  &.done {
+    background: #F0F0F0;
+    border-color: #E0E0E0;
+    opacity: 0.7;
+  }
+}
+.greeting-emoji { font-size: 36rpx; }
+.greeting-label { font-size: 26rpx; color: #333; }
+.partner-greeting {
+  margin-top: 16rpx;
+  text-align: center;
+  font-size: 24rpx;
+  color: #FF69B4;
+}
+
+/* 今日信息聚合 */
+.today-section {
+  margin: 0 30rpx 20rpx;
+}
+.info-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 20rpx;
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 24rpx;
+  margin-bottom: 16rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
+}
+.info-icon {
+  font-size: 40rpx;
+  flex-shrink: 0;
+}
+.info-content {
+  flex: 1;
+  min-width: 0;
+}
+.info-title {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 6rpx;
+}
+.info-desc {
+  font-size: 24rpx;
+  color: #666;
+  line-height: 1.5;
+}
+.anniversary-card {
+  border-left: 6rpx solid #FFD700;
 }
 
 .module-section {

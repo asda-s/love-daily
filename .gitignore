@@ -10,3 +10,4 @@ logs/
 .ruff_cache/
 *.egg-info/
 .venv/
+unpackage/

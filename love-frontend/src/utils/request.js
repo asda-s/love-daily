@@ -4,12 +4,16 @@
  */
 
 import { getToken, removeToken } from './auth'
+import { disconnect as wsDisconnect } from './websocket'
 
 // API基础地址配置
-// #ifdef MP-WEIXIN
-const BASE_URL = 'https://你的域名'  // TODO: 替换为你的后端HTTPS域名
+// #ifdef APP-PLUS
+const BASE_URL = 'https://love-daily-api.onrender.com'
 // #endif
-// #ifndef MP-WEIXIN
+// #ifdef MP-WEIXIN
+const BASE_URL = 'https://love-daily-api.onrender.com'
+// #endif
+// #ifdef H5
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
 // #endif
 
@@ -68,7 +72,7 @@ function request(options = {}) {
     url,
     method = 'GET',
     data = {},
-    useLoading = true,
+    useLoading = false,
     showError = true
   } = options
 
@@ -105,6 +109,7 @@ function request(options = {}) {
           if (result.code === 200) {
             resolve(result)
           } else if (result.code === 401) {
+            wsDisconnect()
             removeToken()
             uni.showToast({ title: '登录已过期，请重新登录', icon: 'none' })
             setTimeout(() => { uni.reLaunch({ url: '/pages/user/login' }) }, 500)
@@ -116,6 +121,7 @@ function request(options = {}) {
             reject(result)
           }
         } else if (res.statusCode === 401) {
+          wsDisconnect()
           removeToken()
           uni.showToast({ title: '登录已过期，请重新登录', icon: 'none' })
           setTimeout(() => { uni.reLaunch({ url: '/pages/user/login' }) }, 500)

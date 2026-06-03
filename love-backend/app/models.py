@@ -3,7 +3,7 @@
 定义所有数据库表结构，使用SQLAlchemy ORM
 """
 
-from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, Float, Numeric, ForeignKey, Date, UniqueConstraint
+from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, Float, Numeric, ForeignKey, Date, UniqueConstraint, Index
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.database import Base
@@ -94,7 +94,7 @@ class Whisper(Base):
     sender_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True, comment="发送人ID")
     receiver_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True, comment="接收人ID")
     content = Column(Text, nullable=False, comment="内容")
-    send_time = Column(DateTime, default=datetime.now, comment="发送时间")
+    send_time = Column(DateTime, default=datetime.now, index=True, comment="发送时间")
     is_read = Column(Boolean, default=False, comment="是否已读")
     is_scheduled = Column(Boolean, default=False, comment="是否定时发送")
     scheduled_time = Column(DateTime, default=None, comment="定时发送时间")
@@ -103,6 +103,25 @@ class Whisper(Base):
     # 关系定义
     sender = relationship("User", foreign_keys=[sender_id], backref="sent_whispers")
     receiver = relationship("User", foreign_keys=[receiver_id], backref="received_whispers")
+
+
+class Greeting(Base):
+    """早安晚安表"""
+    __tablename__ = "greetings"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    sender_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True, comment="发送人ID")
+    receiver_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True, comment="接收人ID")
+    type = Column(String(20), nullable=False, comment="类型: morning-早安, evening-晚安")
+    greeting_date = Column(Date, nullable=False, comment="问候日期")
+    created_at = Column(DateTime, default=datetime.now, comment="创建时间")
+
+    sender = relationship("User", foreign_keys=[sender_id], backref="sent_greetings")
+    receiver = relationship("User", foreign_keys=[receiver_id], backref="received_greetings")
+
+    __table_args__ = (
+        UniqueConstraint('sender_id', 'greeting_date', 'type', name='uq_greeting_per_day'),
+    )
 
 
 class Period(Base):
@@ -173,7 +192,7 @@ class MoodDiary(Base):
     content = Column(Text, nullable=False, comment="日记内容")
     images = Column(Text, default=None, comment="图片JSON数组")
     tags = Column(Text, default=None, comment="标签JSON数组,最多3个")
-    diary_date = Column(Date, nullable=False, comment="日记日期（记录哪一天的心情）")
+    diary_date = Column(Date, nullable=False, index=True, comment="日记日期（记录哪一天的心情）")
     is_read = Column(Boolean, default=False, comment="对方是否已读")
     read_time = Column(DateTime, default=None, comment="对方阅读时间")
     publish_status = Column(String(20), default="published", comment="发布状态: draft/published/scheduled")
@@ -259,6 +278,10 @@ class CheckinRecord(Base):
     project = relationship("CheckinProject", backref="records")
     user = relationship("User", backref="checkin_records")
 
+    __table_args__ = (
+        UniqueConstraint('project_id', 'user_id', 'checkin_date', name='uq_checkin_per_day'),
+    )
+
 
 class Benefit(Base):
     """积分福利表"""
@@ -316,7 +339,7 @@ class Bill(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True, comment="创建人ID")
     amount = Column(Numeric(10, 2), nullable=False, comment="开支金额")
     type = Column(String(20), default="other", comment="类型: food-吃饭, travel-旅行, gift-礼物, daily-日常, other-其他")
-    pay_time = Column(DateTime, nullable=False, comment="开支时间")
+    pay_time = Column(DateTime, nullable=False, index=True, comment="开支时间")
     payer = Column(String(20), nullable=False, comment="支付人: me-我, lover-对方, aa-AA制")
     note = Column(Text, default=None, comment="备注")
     is_aa = Column(Boolean, default=False, comment="是否AA制")
@@ -368,3 +391,7 @@ class Notification(Base):
     created_at = Column(DateTime, default=datetime.now, comment="创建时间")
 
     user = relationship("User", backref="notifications")
+
+    __table_args__ = (
+        Index('ix_notification_user_read', 'user_id', 'is_read'),
+    )

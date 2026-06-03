@@ -22,6 +22,15 @@ from app.response import success_response, error_response
 import json
 
 
+def safe_json_loads(s, default=None):
+    if not s:
+        return default if default is not None else []
+    try:
+        return json.loads(s)
+    except (json.JSONDecodeError, TypeError):
+        return default if default is not None else []
+
+
 from app.utils import try_achieve
 
 router = APIRouter()
@@ -183,7 +192,7 @@ async def get_memory_list(
             "title": memory.title,
             "content": memory.content,
             "event_time": memory.event_time.strftime("%Y-%m-%d %H:%M:%S") if memory.event_time else None,
-            "images": json.loads(memory.images) if memory.images else [],
+            "images": safe_json_loads(memory.images),
             "is_sync": memory.is_sync,
             "created_at": memory.created_at.strftime("%Y-%m-%d %H:%M:%S") if memory.created_at else None
         })
@@ -229,7 +238,7 @@ async def get_memory_detail(
         "title": memory.title,
         "content": memory.content,
         "event_time": memory.event_time.strftime("%Y-%m-%d %H:%M:%S") if memory.event_time else None,
-        "images": json.loads(memory.images) if memory.images else [],
+        "images": safe_json_loads(memory.images),
         "is_sync": memory.is_sync,
         "created_at": memory.created_at.strftime("%Y-%m-%d %H:%M:%S") if memory.created_at else None
     }
@@ -320,13 +329,23 @@ async def upload_image(
     img.save(buf, format="JPEG", quality=quality, optimize=True)
     contents = buf.getvalue()
 
-    import base64
-    b64_str = base64.b64encode(contents).decode("utf-8")
-    data_url = f"data:image/jpeg;base64,{b64_str}"
+    # 保存到本地文件系统
+    import uuid
+    from datetime import datetime as dt
+    now = dt.now()
+    date_dir = now.strftime("%Y/%m/%d")
+    upload_root = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
+    full_dir = os.path.join(upload_root, date_dir)
+    os.makedirs(full_dir, exist_ok=True)
+    filename = f"{uuid.uuid4().hex}.jpg"
+    filepath = os.path.join(full_dir, filename)
+    with open(filepath, "wb") as f:
+        f.write(contents)
+    relative_url = f"/uploads/{date_dir}/{filename}"
 
-    logger.info(f"图片上传: user={current_user.id} file={file.filename} size={len(contents)} -> base64")
+    logger.info(f"图片上传: user={current_user.id} file={file.filename} size={len(contents)} -> {relative_url}")
     return success_response(
-        data={"url": data_url},
+        data={"url": relative_url},
         message="上传成功"
     )
 
@@ -475,9 +494,16 @@ async def get_anniversary_list(
         # 计算倒计时
         target_date = anniversary.target_date
         if anniversary.is_yearly:
-            this_year_target = target_date.replace(year=today.year)
+            try:
+                this_year_target = target_date.replace(year=today.year)
+            except ValueError:
+                # 2月29日遇到非闰年，回退到2月28日
+                this_year_target = target_date.replace(year=today.year, day=28)
             if this_year_target < today:
-                this_year_target = target_date.replace(year=today.year + 1)
+                try:
+                    this_year_target = target_date.replace(year=today.year + 1)
+                except ValueError:
+                    this_year_target = target_date.replace(year=today.year + 1, day=28)
             target_date = this_year_target
 
         days_left = (target_date - today).days
@@ -597,6 +623,14 @@ async def delete_wish(
     if wish.user_id != current_user.id:
         return error_response(403, "无权限删除")
 
+    # 清理心愿完成时自动创建的时光线记录
+    if wish.status == "completed":
+        db.query(Memory).filter(
+            Memory.user_id == wish.user_id,
+            Memory.title.like(f"完成心愿：%"),
+            Memory.content == wish.content
+        ).delete(synchronize_session=False)
+
     db.delete(wish)
     db.commit()
 
@@ -711,19 +745,22 @@ async def create_whisper(
             )
             db.add(notification)
             db.commit()
-            # WebSocket推送
+            # WebSocket推送 - 实时悄悄话消息
             try:
-                from app.routers.websocket import broadcast_to_user
-                import asyncio
-                loop = asyncio.get_event_loop()
-                if loop.is_running():
-                    asyncio.run_coroutine_threadsafe(
-                        broadcast_to_user(current_user.lover_id, {
-                            "type": "notification",
-                            "data": {"title": title, "content": content_preview, "notification_type": "whisper"}
-                        }),
-                        loop
-                    )
+                from app.routers.websocket import broadcast_whisper, broadcast_to_user
+                await broadcast_whisper(current_user.lover_id, {
+                    "id": new_whisper.id,
+                    "sender_id": current_user.id,
+                    "sender_nickname": current_user.nickname or "TA",
+                    "sender_avatar": current_user.avatar,
+                    "content": new_whisper.content,
+                    "send_time": new_whisper.send_time.strftime("%Y-%m-%d %H:%M:%S") if new_whisper.send_time else None,
+                    "is_read": False
+                })
+                await broadcast_to_user(current_user.lover_id, {
+                    "type": "notification",
+                    "data": {"title": title, "content": content_preview, "notification_type": "whisper"}
+                })
             except Exception:
                 pass
         except Exception:
@@ -789,8 +826,7 @@ async def get_whisper_list(
                 # 对接收方：已发送的（send_time不为空）或定时时间已到的才显示
                 or_(
                     Whisper.send_time.isnot(None),
-                    and_(Whisper.is_scheduled == True, Whisper.scheduled_time <= now),
-                    Whisper.is_scheduled == False
+                    and_(Whisper.is_scheduled == True, Whisper.scheduled_time <= now)
                 )
             )
         )

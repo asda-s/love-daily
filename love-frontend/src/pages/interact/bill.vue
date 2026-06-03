@@ -10,15 +10,15 @@
       <view class="summary-row">
         <view class="summary-item">
           <text class="summary-label">我的支出</text>
-          <text class="summary-value">¥{{ summary.my_total }}</text>
+          <text class="summary-value">¥{{ Number(summary.my_total).toFixed(2) }}</text>
         </view>
         <view class="summary-item">
           <text class="summary-label">TA的支出</text>
-          <text class="summary-value">¥{{ summary.lover_total }}</text>
+          <text class="summary-value">¥{{ Number(summary.lover_total).toFixed(2) }}</text>
         </view>
         <view class="summary-item">
           <text class="summary-label">总计</text>
-          <text class="summary-value highlight">¥{{ summary.total }}</text>
+          <text class="summary-value highlight">¥{{ Number(summary.total).toFixed(2) }}</text>
         </view>
       </view>
       <view v-if="summary.aa?.balance_desc" class="balance-row">
@@ -36,7 +36,7 @@
           </view>
         </view>
         <view class="bill-right">
-          <text class="bill-amount">¥{{ b.amount }}</text>
+          <text class="bill-amount">¥{{ Number(b.amount).toFixed(2) }}</text>
           <text class="bill-date">{{ b.pay_time }}</text>
           <text class="bill-delete" @click="deleteBill(b)">删除</text>
         </view>
@@ -74,21 +74,30 @@ const bills = ref([])
 const refreshing = ref(false)
 const summary = ref(null)
 const page = ref(1)
-const pageSize = 20
+const pageSize = 50
+const total = ref(0)
 const hasMore = ref(true)
 const loadingMore = ref(false)
 const typeNames = { food: '餐饮', travel: '旅行', gift: '礼物', daily: '日常', other: '其他' }
 
 onMounted(() => { loadData() })
 
-const loadData = async () => {
+const loadData = async (append = false) => {
   try {
-    const params = { year: currentYear.value, month: currentMonth.value }
+    const params = { year: currentYear.value, month: currentMonth.value, page: page.value, page_size: pageSize }
     const [bRes, sRes] = await Promise.all([
       get('/interact/bill', params),
       get('/interact/bill/monthly-summary', params)
     ])
-    if (bRes && bRes.data) bills.value = bRes.data
+    if (bRes && bRes.data) {
+      if (append) {
+        bills.value = [...bills.value, ...bRes.data.list]
+      } else {
+        bills.value = bRes.data.list
+      }
+      total.value = bRes.data.total
+      hasMore.value = bills.value.length < total.value
+    }
     if (sRes && sRes.data) summary.value = sRes.data
   } catch (e) {
     uni.showToast({ title: '加载失败', icon: 'none' })
@@ -98,12 +107,16 @@ const loadData = async () => {
 const prevMonth = () => {
   if (currentMonth.value === 1) { currentMonth.value = 12; currentYear.value-- }
   else currentMonth.value--
+  page.value = 1
+  hasMore.value = true
   loadData()
 }
 
 const nextMonth = () => {
   if (currentMonth.value === 12) { currentMonth.value = 1; currentYear.value++ }
   else currentMonth.value++
+  page.value = 1
+  hasMore.value = true
   loadData()
 }
 
@@ -122,7 +135,7 @@ async function loadMore() {
   if (loadingMore.value || !hasMore.value) return
   loadingMore.value = true
   page.value++
-  await loadData()
+  await loadData(true)
   loadingMore.value = false
 }
 

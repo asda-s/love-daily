@@ -26,8 +26,12 @@ def _broadcast_notification(user_id: int, title: str, content: str, ntype: str):
     """通过WebSocket推送通知（在后台线程中调用async函数）"""
     try:
         from app.routers.websocket import broadcast_to_user
-        loop = asyncio.get_event_loop()
-        if loop.is_running():
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+
+        if loop and loop.is_running():
             asyncio.run_coroutine_threadsafe(
                 broadcast_to_user(user_id, {
                     "type": "notification",
@@ -35,6 +39,12 @@ def _broadcast_notification(user_id: int, title: str, content: str, ntype: str):
                 }),
                 loop
             )
+        else:
+            # 没有运行中的事件循环，创建新的来执行
+            asyncio.run(broadcast_to_user(user_id, {
+                "type": "notification",
+                "data": {"title": title, "content": content, "notification_type": ntype}
+            }))
     except Exception as e:
         logger.debug(f"WebSocket推送跳过: {e}")
 
@@ -62,20 +72,33 @@ def check_anniversaries():
     db = SessionLocal()
     try:
         today = date.today()
-        anniversaries = db.query(Anniversary).all()
+        # 只查询需要提醒的纪念日（remind_days > 0 且有情侣绑定的用户）
+        anniversaries = db.query(Anniversary).filter(Anniversary.remind_days > 0).all()
+
+        # 批量预加载用户信息
+        user_ids = set()
+        for a in anniversaries:
+            user_ids.add(a.user_id)
+        users_map = {u.id: u for u in db.query(User).filter(User.id.in_(user_ids)).all()} if user_ids else {}
 
         for anniversary in anniversaries:
             target_date = anniversary.target_date
             if anniversary.is_yearly:
-                this_year_target = target_date.replace(year=today.year)
+                try:
+                    this_year_target = target_date.replace(year=today.year)
+                except ValueError:
+                    this_year_target = target_date.replace(year=today.year, day=28)
                 if this_year_target < today:
-                    this_year_target = target_date.replace(year=today.year + 1)
+                    try:
+                        this_year_target = target_date.replace(year=today.year + 1)
+                    except ValueError:
+                        this_year_target = target_date.replace(year=today.year + 1, day=28)
                 target_date = this_year_target
 
             days_left = (target_date - today).days
 
             if 0 <= days_left <= anniversary.remind_days:
-                user = db.query(User).filter(User.id == anniversary.user_id).first()
+                user = users_map.get(anniversary.user_id)
                 if user:
                     title = f"纪念日提醒"
                     content = f"「{anniversary.title}」还有{days_left}天到来"
@@ -142,9 +165,13 @@ def publish_scheduled_diaries():
             MoodDiary.scheduled_time <= now
         ).all()
 
+        # 批量预加载用户信息
+        user_ids = set(d.user_id for d in diaries)
+        users_map = {u.id: u for u in db.query(User).filter(User.id.in_(user_ids)).all()} if user_ids else {}
+
         for diary in diaries:
             diary.publish_status = "published"
-            user = db.query(User).filter(User.id == diary.user_id).first()
+            user = users_map.get(diary.user_id)
             if user and user.lover_id:
                 title = "新日记提醒"
                 content = f"TA发布了一篇心情日记，快去看看吧"
@@ -168,32 +195,34 @@ def generate_weekly_emotion_report():
         week_start = today - timedelta(days=today.weekday())
         week_end = week_start + timedelta(days=6)
 
-        users = db.query(User).filter(User.lover_id.isnot(None)).all()
-        for user in users:
-            diaries = db.query(MoodDiary).filter(
-                MoodDiary.user_id == user.id,
-                MoodDiary.publish_status == "published",
-                func.date(MoodDiary.created_at) >= week_start,
-                func.date(MoodDiary.created_at) <= week_end
-            ).all()
+        # 批量查询本周所有已发布日记
+        diaries = db.query(MoodDiary).filter(
+            MoodDiary.publish_status == "published",
+            func.date(MoodDiary.created_at) >= week_start,
+            func.date(MoodDiary.created_at) <= week_end
+        ).all()
 
-            if not diaries:
-                continue
+        # 按用户分组
+        user_diaries = {}
+        for d in diaries:
+            user_diaries.setdefault(d.user_id, []).append(d)
 
+        MOOD_NAMES = {
+            "happy": "开心", "sweet": "甜蜜", "calm": "平静", "tired": "疲惫",
+            "sad": "难过", "angry": "生气", "wronged": "委屈", "surprised": "惊喜"
+        }
+
+        for user_id, user_diary_list in user_diaries.items():
             mood_counts = {}
-            for d in diaries:
+            for d in user_diary_list:
                 mood_counts[d.mood_type] = mood_counts.get(d.mood_type, 0) + 1
 
-            MOOD_NAMES = {
-                "happy": "开心", "sweet": "甜蜜", "calm": "平静", "tired": "疲惫",
-                "sad": "难过", "angry": "生气", "wronged": "委屈", "surprised": "惊喜"
-            }
             top_mood = max(mood_counts, key=mood_counts.get)
             top_mood_name = MOOD_NAMES.get(top_mood, top_mood)
 
             title = "心情周报"
-            content = f"本周共写了{len(diaries)}篇日记，最常见的心情是「{top_mood_name}」"
-            _create_notification(db, user.id, title, content, "diary")
+            content = f"本周共写了{len(user_diary_list)}篇日记，最常见的心情是「{top_mood_name}」"
+            _create_notification(db, user_id, title, content, "diary")
 
         db.commit()
         logger.info("心情周报生成完成")
@@ -214,8 +243,12 @@ def check_todos():
             Todo.remind_time <= now
         ).all()
 
+        # 批量预加载用户信息
+        user_ids = set(t.user_id for t in todos)
+        users_map = {u.id: u for u in db.query(User).filter(User.id.in_(user_ids)).all()} if user_ids else {}
+
         for todo in todos:
-            user = db.query(User).filter(User.id == todo.user_id).first()
+            user = users_map.get(todo.user_id)
             if user:
                 title = "待办提醒"
                 content = f"「{todo.title}」需要完成"
@@ -245,6 +278,13 @@ def send_scheduled_whispers():
             Whisper.send_time.is_(None)
         ).all()
 
+        # 批量预加载用户信息
+        user_ids = set()
+        for w in whispers:
+            user_ids.add(w.sender_id)
+            user_ids.add(w.receiver_id)
+        users_map = {u.id: u for u in db.query(User).filter(User.id.in_(user_ids)).all()} if user_ids else {}
+
         for whisper in whispers:
             whisper.send_time = now
             title = "悄悄话"
@@ -269,12 +309,96 @@ def check_anniversary_achievements():
         today = date.today()
         users = db.query(User).filter(User.lover_id.isnot(None)).all()
         for user in users:
-            days_together = (today - user.created_at.date()).days
+            bind_date = user.bind_time.date() if user.bind_time else user.created_at.date()
+            days_together = (today - bind_date).days
             if days_together >= 365:
                 try_unlock_achievement(user.id, "一周年快乐", db)
         logger.info("一周年成就检查完成")
     except Exception as e:
         logger.error(f"一周年成就检查失败: {e}")
+        db.rollback()
+    finally:
+        db.close()
+
+
+MILESTONE_DAYS = [100, 200, 365, 500, 730, 1000]
+
+
+def check_milestones():
+    """检测恋爱里程碑"""
+    db = SessionLocal()
+    try:
+        today = date.today()
+        users = db.query(User).filter(User.lover_id.isnot(None)).all()
+        for user in users:
+            bind_date = user.bind_time.date() if user.bind_time else user.created_at.date()
+            days_together = (today - bind_date).days
+            for milestone in MILESTONE_DAYS:
+                if days_together == milestone:
+                    title = "恋爱里程碑"
+                    content = f"你们在一起已经{milestone}天啦！"
+                    _create_notification(db, user.id, title, content, "milestone")
+                    if user.lover_id:
+                        _create_notification(db, user.lover_id, title, content, "milestone")
+
+                    # 365天以上自动解锁"一周年快乐"成就
+                    if milestone >= 365:
+                        try:
+                            from app.routers.love import try_unlock_achievement
+                            try_unlock_achievement(user.id, "一周年快乐", db)
+                            if user.lover_id:
+                                try_unlock_achievement(user.lover_id, "一周年快乐", db)
+                        except Exception:
+                            pass
+                    break
+        db.commit()
+        logger.info("里程碑检查完成")
+    except Exception as e:
+        logger.error(f"里程碑检查失败: {e}")
+        db.rollback()
+    finally:
+        db.close()
+
+
+def check_greeting_reminders():
+    """早安晚安提醒：伴侣未问候时发送提醒"""
+    db = SessionLocal()
+    try:
+        from app.models import Greeting
+        today = date.today()
+        now = datetime.now(CHINA_TZ)
+        hour = now.hour
+
+        greeting_type = None
+        if hour == 9:
+            greeting_type = "morning"
+        elif hour == 22:
+            greeting_type = "evening"
+        else:
+            return
+
+        # 批量查询今天所有已发送的问候
+        sent_greetings = db.query(Greeting).filter(
+            Greeting.greeting_date == today,
+            Greeting.type == greeting_type
+        ).all()
+        sent_set = {(g.sender_id, g.receiver_id) for g in sent_greetings}
+
+        users = db.query(User).filter(User.lover_id.isnot(None)).all()
+        for user in users:
+            if (user.lover_id, user.id) not in sent_set:
+                type_label = "早安" if greeting_type == "morning" else "晚安"
+                _create_notification(
+                    db, user.id,
+                    f"提醒{type_label}",
+                    f"TA今天还没有跟你说{type_label}哦，去提醒一下吧",
+                    "greeting"
+                )
+
+        db.commit()
+        logger.info("早安晚安提醒检查完成")
+    except Exception as e:
+        logger.error(f"早安晚安提醒检查失败: {e}")
         db.rollback()
     finally:
         db.close()
@@ -327,6 +451,20 @@ def init_scheduler():
         check_anniversary_achievements,
         CronTrigger(hour=0, minute=5, timezone=CHINA_TZ),
         id="anniversary_achievement_check",
+        replace_existing=True
+    )
+
+    scheduler.add_job(
+        check_milestones,
+        CronTrigger(hour=0, minute=5, timezone=CHINA_TZ),
+        id="milestone_check",
+        replace_existing=True
+    )
+
+    scheduler.add_job(
+        check_greeting_reminders,
+        CronTrigger(hour="9,22", minute=0, timezone=CHINA_TZ),
+        id="greeting_reminder",
         replace_existing=True
     )
 

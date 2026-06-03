@@ -6,7 +6,7 @@
       </view>
       <view class="user-card">
         <view class="avatar-wrap" @click="changeAvatar">
-          <image class="avatar" :src="userInfo.avatar || '/static/default-avatar.png'" mode="aspectFill" />
+          <image class="avatar" :src="resolveImageUrl(userInfo.avatar)" mode="aspectFill" />
           <view class="avatar-edit">修改头像</view>
         </view>
         <view class="user-meta">
@@ -15,7 +15,7 @@
         </view>
       </view>
       <view v-if="userStore.isBindLover && loverInfo" class="couple-bar">
-        <image class="couple-avatar" :src="loverInfo.avatar || '/static/default-avatar.png'" mode="aspectFill" />
+        <image class="couple-avatar" :src="resolveImageUrl(loverInfo.avatar)" mode="aspectFill" />
         <text class="couple-name">{{ loverInfo.nickname || 'TA' }}</text>
         <text class="couple-label">已绑定</text>
       </view>
@@ -160,6 +160,7 @@ import { useUserStore } from '@/store/user.js'
 import { put, post } from '@/utils/request'
 import { getToken } from '@/utils/auth'
 import { LEVEL_CONFIG } from '@/utils/constants'
+import { resolveImageUrl } from '@/utils/common'
 
 const userStore = useUserStore()
 const userInfo = ref({})
@@ -268,10 +269,7 @@ function handleUnbind() {
     success: async (res) => {
       if (res.confirm) {
         try {
-          await post('/user/unbind')
-          userStore.loverInfo = null
-          userInfo.value.lover_id = null
-          loverInfo.value = {}
+          await userStore.unbindLover()
           uni.showToast({ title: '已解除绑定' })
         } catch (e) {
           uni.showToast({ title: '操作失败，请重试', icon: 'none' })

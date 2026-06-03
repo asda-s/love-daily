@@ -608,8 +608,9 @@ async def create_diary(
         try:
             from app.routers.love import check_diary_achievements
             check_diary_achievements(current_user.id, db)
-        except Exception:
-            pass
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).warning(f"日记成就检测失败: {e}")
 
     # If published immediately and has lover, create notification
     if data.publish_status == "published" and current_user.lover_id:
@@ -622,24 +623,20 @@ async def create_diary(
         db.add(notification)
         db.commit()
         try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                asyncio.run_coroutine_threadsafe(
-                    broadcast_to_user(
-                        current_user.lover_id,
-                        {
-                            "type": "notification",
-                            "data": {
-                                "title": "心情日记",
-                                "content": f"{current_user.nickname or 'TA'}发布了一篇心情日记",
-                                "notification_type": "diary"
-                            }
-                        }
-                    ),
-                    loop
-                )
-        except:
-            pass
+            await broadcast_to_user(
+                current_user.lover_id,
+                {
+                    "type": "notification",
+                    "data": {
+                        "title": "心情日记",
+                        "content": f"{current_user.nickname or 'TA'}发布了一篇心情日记",
+                        "notification_type": "diary"
+                    }
+                }
+            )
+        except Exception:
+            import logging
+            logging.getLogger(__name__).warning("日记WebSocket推送失败", exc_info=True)
 
     return success_response(data={"id": diary.id}, message="发布成功")
 
@@ -773,8 +770,8 @@ async def emotion_report(
 
     query = db.query(MoodDiary).filter(
         MoodDiary.publish_status == "published",
-        MoodDiary.created_at >= week_start,
-        MoodDiary.created_at < week_end
+        MoodDiary.diary_date >= week_start,
+        MoodDiary.diary_date < week_end
     )
     if current_user.lover_id:
         query = query.filter(or_(MoodDiary.user_id == current_user.id, MoodDiary.user_id == current_user.lover_id))
@@ -857,7 +854,8 @@ async def get_diary_detail(
             "type": r.reaction_type,
             "emoji": REACTION_EMOJI.get(r.reaction_type, ""),
             "user_id": r.user_id,
-            "nickname": (reaction_users.get(r.user_id).nickname if reaction_users.get(r.user_id) else "")
+            "nickname": (reaction_users.get(r.user_id).nickname if reaction_users.get(r.user_id) else ""),
+            "avatar": (reaction_users.get(r.user_id).avatar if reaction_users.get(r.user_id) else None)
         }
         for r in reactions
     ]
@@ -977,9 +975,9 @@ async def list_diaries(
     if user_id:
         query = query.filter(MoodDiary.user_id == user_id)
     if start_date:
-        query = query.filter(MoodDiary.created_at >= start_date)
+        query = query.filter(MoodDiary.diary_date >= start_date)
     if end_date:
-        query = query.filter(MoodDiary.created_at <= end_date)
+        query = query.filter(MoodDiary.diary_date <= end_date)
 
     query = query.order_by(MoodDiary.created_at.desc())
 
@@ -1022,7 +1020,8 @@ async def list_diaries(
                 "type": r.reaction_type,
                 "emoji": REACTION_EMOJI.get(r.reaction_type, ""),
                 "user_id": r.user_id,
-                "nickname": (reaction_users.get(r.user_id).nickname if reaction_users.get(r.user_id) else "")
+                "nickname": (reaction_users.get(r.user_id).nickname if reaction_users.get(r.user_id) else ""),
+                "avatar": (reaction_users.get(r.user_id).avatar if reaction_users.get(r.user_id) else None)
             }
             for r in diary_reactions
         ]

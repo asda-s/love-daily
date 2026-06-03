@@ -139,6 +139,25 @@ export function formatAmount(amount, decimals = 2) {
  */
 export const getLevelInfo = _getLevelInfo
 
+/**
+ * 解析图片URL
+ * 兼容 base64 data URL（旧数据）、完整URL、相对路径
+ * @param {string} url - 原始图片URL
+ * @returns {string} 可直接使用的图片URL
+ */
+export function resolveImageUrl(url) {
+  if (!url) return '/static/default-avatar.png'
+  if (url.startsWith('data:') || url.startsWith('http')) return url
+  // 相对路径如 /uploads/2026/06/03/xxx.jpg
+  // #ifdef H5
+  const base = import.meta.env.VITE_API_BASE_URL || ''
+  return base + url
+  // #endif
+  // #ifdef MP-WEIXIN || APP-PLUS
+  return 'https://love-daily-api.onrender.com' + url
+  // #endif
+}
+
 export default {
   formatDate,
   getDaysLeft,

@@ -103,7 +103,7 @@
       <text class="section-label">配图 ({{ form.images.length }} / 9)</text>
       <view class="image-grid">
         <view v-for="(img, idx) in form.images" :key="idx" class="image-thumb">
-          <image :src="img" mode="aspectFill" class="thumb-img" @click="previewImage(idx)" />
+          <image :src="resolveImageUrl(img)" mode="aspectFill" class="thumb-img" @click="previewImage(idx)" />
           <view class="img-remove" @click.stop="removeImage(idx)">
             <text class="img-remove-icon">x</text>
           </view>
@@ -167,9 +167,10 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, onMounted, onUnmounted, watch } from 'vue'
 import { get, post, put } from '@/utils/request'
 import { getToken } from '@/utils/auth'
+import { resolveImageUrl } from '@/utils/common'
 
 // ---- Constants ----
 const MOOD_CONFIG = {
@@ -195,6 +196,7 @@ const scheduleDate = ref('')
 const scheduleTime = ref('')
 const uploading = ref(false)
 let autoSaveTimer = null
+let hasChanges = false
 
 const form = reactive({
   mood_type: 'happy',
@@ -208,6 +210,9 @@ const form = reactive({
   scheduled_time: ''
 })
 
+// 跟踪表单变化
+watch(form, () => { hasChanges = true }, { deep: true })
+
 // ---- Lifecycle ----
 onMounted(() => {
   const pages = getCurrentPages()
@@ -218,10 +223,14 @@ onMounted(() => {
     loadDiary()
   } else {
     loadDraft()
+    // 仅新日记启用自动保存
+    autoSaveTimer = setInterval(() => {
+      if (hasChanges) {
+        autoSaveDraft()
+        hasChanges = false
+      }
+    }, 30000)
   }
-  autoSaveTimer = setInterval(() => {
-    autoSaveDraft()
-  }, 30000)
 })
 
 onUnmounted(() => {
@@ -468,6 +477,10 @@ const onPublish = async () => {
     } else {
       await post('/life/diary', payload)
       uni.showToast({ title: '发布成功' })
+    }
+    // 发布成功后清除草稿
+    if (!isEdit.value) {
+      try { await put('/life/diary/draft', { content: '' }, { useLoading: false, showError: false }) } catch (_) {}
     }
     setTimeout(() => uni.navigateBack(), 1000)
   } catch (e) {

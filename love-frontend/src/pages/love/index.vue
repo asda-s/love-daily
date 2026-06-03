@@ -87,6 +87,7 @@ import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { get, post } from '@/utils/request'
 import { useUserStore } from '@/store/user.js'
+import { useGlobalStore } from '@/store/global'
 import { LEVEL_CONFIG } from '@/utils/constants'
 import CustomTabbar from '@/components/custom-tabbar.vue'
 
@@ -139,7 +140,16 @@ onShow(async () => {
       get('/love/overview'),
       loadBenefits()
     ])
-    if (overviewRes && overviewRes.data) overview.value = overviewRes.data
+    if (overviewRes && overviewRes.data) {
+      overview.value = overviewRes.data
+      // 检测等级提升
+      const globalStore = useGlobalStore()
+      const prevLevel = uni.getStorageSync('prev_level') || 1
+      if (overviewRes.data.level > prevLevel) {
+        globalStore.celebrate('confetti', '等级提升！', `恭喜达到 Lv.${overviewRes.data.level}`)
+      }
+      uni.setStorageSync('prev_level', overviewRes.data.level)
+    }
   } catch (e) {
     uni.showToast({ title: '加载失败', icon: 'none' })
   }

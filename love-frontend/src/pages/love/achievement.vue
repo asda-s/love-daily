@@ -31,14 +31,30 @@
 import { ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { get } from '@/utils/request'
+import { useGlobalStore } from '@/store/global'
 
+const globalStore = useGlobalStore()
 const achievements = ref([])
 const refreshing = ref(false)
 
 const loadData = async () => {
   try {
     const res = await get('/love/achievements')
-    if (res && res.data) achievements.value = res.data
+    if (res && res.data) {
+      // 检测新解锁的成就
+      const lastStates = JSON.parse(uni.getStorageSync('achievement_states') || '{}')
+      const newUnlocks = res.data.filter(a => a.is_unlocked && !lastStates[a.id])
+      if (newUnlocks.length > 0) {
+        const a = newUnlocks[0]
+        globalStore.celebrate('burst', '成就解锁！', `${a.name} +${a.reward_points}心动分`)
+      }
+      // 更新缓存
+      const states = {}
+      res.data.forEach(a => { states[a.id] = a.is_unlocked })
+      uni.setStorageSync('achievement_states', JSON.stringify(states))
+
+      achievements.value = res.data
+    }
   } catch (e) {
     console.error('加载成就失败', e)
     uni.showToast({ title: '加载失败', icon: 'none' })

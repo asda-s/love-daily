@@ -4,9 +4,9 @@
       <!-- 用户信息 -->
       <view class="user-section">
         <view class="user-info">
-          <image 
-            class="avatar" 
-            :src="detail.avatar || '/static/default-avatar.png'" 
+          <image
+            class="avatar"
+            :src="resolveImageUrl(detail.avatar) || '/static/default-avatar.png'"
             mode="aspectFill"
           ></image>
           <view class="user-text">
@@ -24,11 +24,11 @@
 
       <!-- 图片 -->
       <view v-if="detail.images && detail.images.length > 0" class="image-section">
-        <image 
-          v-for="(img, index) in detail.images" 
+        <image
+          v-for="(img, index) in detail.images"
           :key="index"
           class="detail-image"
-          :src="img"
+          :src="resolveImageUrl(img)"
           mode="widthFix"
           @click="previewImage(index)"
         ></image>
@@ -58,6 +58,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { get, del } from '@/utils/request'
 import { useUserStore } from '@/store/user'
+import { resolveImageUrl } from '@/utils/common'
 
 const userStore = useUserStore()
 
@@ -88,7 +89,7 @@ async function fetchDetail() {
  */
 function previewImage(index) {
   uni.previewImage({
-    urls: detail.value.images,
+    urls: detail.value.images.map(resolveImageUrl),
     current: index
   })
 }

@@ -83,6 +83,40 @@ try:
 except Exception as e:
     logger.warning(f"迁移跳过: {str(e)}")
 
+# 简单迁移：创建greetings表
+try:
+    with engine.connect() as conn:
+        from sqlalchemy import text
+        db_type = engine.url.drivername
+        if 'postgresql' in db_type:
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS greetings (
+                    id SERIAL PRIMARY KEY,
+                    sender_id INTEGER NOT NULL REFERENCES users(id),
+                    receiver_id INTEGER NOT NULL REFERENCES users(id),
+                    type VARCHAR(20) NOT NULL,
+                    greeting_date DATE NOT NULL,
+                    created_at TIMESTAMP DEFAULT NOW(),
+                    UNIQUE(sender_id, greeting_date, type)
+                )
+            """))
+        else:
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS greetings (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    sender_id INTEGER NOT NULL REFERENCES users(id),
+                    receiver_id INTEGER NOT NULL REFERENCES users(id),
+                    type VARCHAR(20) NOT NULL,
+                    greeting_date DATE NOT NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(sender_id, greeting_date, type)
+                )
+            """))
+        conn.commit()
+        logger.info("迁移: greetings表创建完成")
+except Exception as e:
+    logger.warning(f"迁移跳过: {str(e)}")
+
 # 限流器
 limiter = Limiter(key_func=get_remote_address, default_limits=["200/minute"])
 

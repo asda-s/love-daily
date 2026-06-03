@@ -7,9 +7,6 @@
         <view class="header-icon" @click="goCalendar">
           <text class="icon-text">📅</text>
         </view>
-        <view class="header-icon" @click="goReport">
-          <text class="icon-text">📊</text>
-        </view>
       </view>
     </view>
 
@@ -92,7 +89,7 @@
               <view class="card-user-row">
                 <image
                   class="card-avatar"
-                  :src="item.avatar || '/static/default-avatar.png'"
+                  :src="resolveImageUrl(item.avatar) || '/static/default-avatar.png'"
                   mode="aspectFill"
                 />
                 <text class="card-nickname">{{ item.nickname || '匿名' }}</text>
@@ -199,6 +196,7 @@ import { ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { get, post, del } from '@/utils/request'
 import { useUserStore } from '@/store/user'
+import { resolveImageUrl } from '@/utils/common'
 
 const userStore = useUserStore()
 
@@ -333,7 +331,7 @@ function getImageUrl(item) {
   if (!item.images) return ''
   try {
     const arr = typeof item.images === 'string' ? JSON.parse(item.images) : item.images
-    return arr.length > 0 ? arr[0] : ''
+    return arr.length > 0 ? resolveImageUrl(arr[0]) : ''
   } catch {
     return ''
   }

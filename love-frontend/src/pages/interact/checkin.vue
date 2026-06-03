@@ -141,6 +141,12 @@ const addProject = async () => {
     uni.showToast({ title: '请输入名称', icon: 'none' })
     return
   }
+  const pts = Number(newProject.value.points)
+  if (!pts || pts < 1 || pts > 100) {
+    uni.showToast({ title: '积分范围1-100', icon: 'none' })
+    return
+  }
+  newProject.value.points = pts
   try {
     await post('/interact/checkin/project', newProject.value)
     uni.showToast({ title: '创建成功' })

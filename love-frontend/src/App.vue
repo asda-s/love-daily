@@ -1,15 +1,41 @@
+<template>
+  <celebration-overlay
+    :visible="globalStore.showCelebration"
+    :type="globalStore.celebrationType"
+    :title="globalStore.celebrationTitle"
+    :subtitle="globalStore.celebrationSubtitle"
+    @dismiss="globalStore.dismissCelebration()"
+  />
+</template>
+
 <script>
 /**
  * 项目根组件
  * 负责全局登录态检查、应用初始化
  */
 import { useUserStore } from '@/store/user'
+import { useGlobalStore } from '@/store/global'
+import { connect as wsConnect } from '@/utils/websocket'
+import { getToken } from '@/utils/auth'
+import CelebrationOverlay from '@/components/celebration-overlay.vue'
 
 export default {
+  components: { CelebrationOverlay },
+  data() {
+    return {
+      globalStore: null
+    }
+  },
   onLaunch() {
     console.log('App Launch')
+    this.globalStore = useGlobalStore()
     // 应用启动时检查登录态
     this.checkLoginState()
+    // 重连 WebSocket
+    const token = getToken()
+    if (token) {
+      wsConnect(token)
+    }
   },
   onShow() {
     console.log('App Show')

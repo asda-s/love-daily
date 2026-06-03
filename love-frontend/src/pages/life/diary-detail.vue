@@ -33,7 +33,7 @@
     <view class="content-card">
       <!-- Author info -->
       <view class="author-row">
-        <image class="author-avatar" :src="diary.avatar || '/static/default-avatar.png'" mode="aspectFill" />
+        <image class="author-avatar" :src="resolveImageUrl(diary.avatar) || '/static/default-avatar.png'" mode="aspectFill" />
         <view class="author-info">
           <text class="author-name">{{ diary.nickname || '匿名' }}</text>
           <text class="author-time">{{ formatTime(diary.created_at) }}</text>
@@ -51,7 +51,7 @@
           v-for="(img, idx) in imageList"
           :key="idx"
           class="grid-image"
-          :src="img"
+          :src="resolveImageUrl(img)"
           mode="aspectFill"
           @click="previewImage(idx)"
         />
@@ -88,7 +88,7 @@
       <!-- Reaction list -->
       <view class="reaction-list" v-if="diary.reactions && diary.reactions.length">
         <view class="reaction-item" v-for="r in diary.reactions" :key="r.user_id + '-' + r.type">
-          <image class="reaction-avatar" :src="r.avatar || '/static/default-avatar.png'" mode="aspectFill" />
+          <image class="reaction-avatar" :src="resolveImageUrl(r.avatar) || '/static/default-avatar.png'" mode="aspectFill" />
           <text class="reaction-nickname">{{ r.nickname }}</text>
           <text class="reaction-user-emoji">{{ REACTION_CONFIG[r.type]?.emoji || '' }}</text>
         </view>
@@ -109,7 +109,7 @@
       <view class="reply-list">
         <view v-for="reply in rootReplies" :key="reply.id" class="reply-item">
           <view class="reply-main" @longpress="onLongPressReply(reply)">
-            <image class="reply-avatar" :src="reply.avatar || '/static/default-avatar.png'" mode="aspectFill" />
+            <image class="reply-avatar" :src="resolveImageUrl(reply.avatar) || '/static/default-avatar.png'" mode="aspectFill" />
             <view class="reply-body">
               <view class="reply-header">
                 <text class="reply-name">{{ reply.nickname || '匿名' }}</text>
@@ -125,7 +125,7 @@
           <!-- Children replies -->
           <view v-if="reply.children && reply.children.length" class="child-reply-list">
             <view v-for="child in reply.children" :key="child.id" class="reply-item child" @longpress="onLongPressReply(child)">
-              <image class="reply-avatar small" :src="child.avatar || '/static/default-avatar.png'" mode="aspectFill" />
+              <image class="reply-avatar small" :src="resolveImageUrl(child.avatar) || '/static/default-avatar.png'" mode="aspectFill" />
               <view class="reply-body">
                 <view class="reply-header">
                   <text class="reply-name">{{ child.nickname || '匿名' }}</text>
@@ -133,7 +133,7 @@
                 </view>
                 <text class="reply-content">{{ child.content }}</text>
                 <view class="reply-actions">
-                  <text class="reply-action-btn" @click="startReply(reply)">回复</text>
+                  <text class="reply-action-btn" @click="startReply(child)">回复</text>
                 </view>
               </view>
             </view>
@@ -172,7 +172,7 @@ import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { get, post, del } from '@/utils/request'
 import { useUserStore } from '@/store/user'
-import { getRelativeTime } from '@/utils/common'
+import { getRelativeTime, resolveImageUrl } from '@/utils/common'
 
 const MOOD_CONFIG = {
   happy:     { emoji: '😊', name: '开心', color: '#FFD700', bg: '#FFF8DC' },
@@ -314,7 +314,7 @@ async function toggleReaction(type) {
 function previewImage(idx) {
   uni.previewImage({
     current: idx,
-    urls: imageList.value
+    urls: imageList.value.map(resolveImageUrl)
   })
 }
 

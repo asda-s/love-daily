@@ -42,7 +42,7 @@ export const LEVEL_CONFIG = [
   { level: 7, min: 3501, max: 5500, name: '守护' },
   { level: 8, min: 5501, max: 8000, name: '永恒' },
   { level: 9, min: 8001, max: 12000, name: '传奇' },
-  { level: 10, min: 12001, max: Infinity, name: '心动之巅' }
+  { level: 10, min: 12001, max: 9999999, name: '心动之巅' }
 ]
 
 // 等级积分阈值（兼容旧代码）
@@ -61,7 +61,7 @@ export function getLevelInfo(points) {
     if (points >= LEVEL_CONFIG[i].min) {
       const info = LEVEL_CONFIG[i]
       const range = info.max - info.min
-      const progress = range === Infinity ? 100 : Math.min(100, ((points - info.min) / range) * 100)
+      const progress = Math.min(100, ((points - info.min) / range) * 100)
       return { level: info.level, name: info.name, min: info.min, max: info.max, progress }
     }
   }

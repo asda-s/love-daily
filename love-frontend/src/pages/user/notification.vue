@@ -55,6 +55,9 @@ const typeIcons = {
   diary: '📔',
   reaction: '🤗',
   reply: '💬',
+  greeting: '🌅',
+  milestone: '🎯',
+  emotion: '💗',
   system: '🔔'
 }
 
@@ -87,7 +90,7 @@ async function markAllRead() {
   const unread = list.value.filter(n => !n.is_read)
   if (unread.length === 0) return
   try {
-    await Promise.all(unread.map(n => put(`/user/notifications/${n.id}/read`)))
+    await put('/user/notifications/read-all')
     unread.forEach(n => { n.is_read = true })
     uni.showToast({ title: '已全部标记已读' })
   } catch (e) {

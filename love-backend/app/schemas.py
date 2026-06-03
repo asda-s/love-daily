@@ -3,7 +3,7 @@ Pydantic数据模型定义模块
 定义所有接口的入参、出参校验模型
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional, List, Literal
 from datetime import datetime, date
 
@@ -269,6 +269,11 @@ class BillCreate(BaseModel):
     note: Optional[str] = Field(None, description="备注")
     is_aa: bool = Field(False, description="是否AA制")
 
+    @field_validator('amount')
+    @classmethod
+    def round_amount(cls, v):
+        return round(v, 2)
+
 
 class BillUpdate(BaseModel):
     """情侣账本更新入参"""
@@ -286,3 +291,10 @@ class HeartPointAdd(BaseModel):
     """心动分增加入参"""
     points: int = Field(..., ge=1, description="心动分数量")
     reason: str = Field(..., description="获取原因")
+
+
+# ==================== 早安晚安模块 ====================
+
+class GreetingCreate(BaseModel):
+    """早安晚安创建入参"""
+    type: Literal["morning", "evening"] = Field(..., description="类型: morning-早安, evening-晚安")
