@@ -10,6 +10,21 @@
       </view>
     </view>
 
+    <!-- Search Bar -->
+    <view class="search-bar">
+      <input
+        class="search-input"
+        v-model="searchKeyword"
+        placeholder="搜索日记内容..."
+        confirm-type="search"
+        @confirm="doSearch"
+        @input="onSearchInput"
+      />
+      <view v-if="searchKeyword" class="search-clear" @click="clearSearch">
+        <text class="clear-text">✕</text>
+      </view>
+    </view>
+
     <!-- Mood Filter -->
     <scroll-view scroll-x class="mood-filter" :show-scrollbar="false">
       <view class="mood-filter-inner">
@@ -238,6 +253,8 @@ const noMore = ref(false)
 
 const reactionPickerVisible = ref(false)
 const reactionTargetItem = ref(null)
+const searchKeyword = ref('')
+let searchTimer = null
 
 onShow(() => {
   loadDiaryList(true)
@@ -251,6 +268,43 @@ function selectMood(mood) {
 function selectPublisher(pub) {
   selectedPublisher.value = pub
   loadDiaryList(true)
+}
+
+function onSearchInput() {
+  clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => {
+    doSearch()
+  }, 500)
+}
+
+function doSearch() {
+  if (searchKeyword.value.trim()) {
+    searchDiaries()
+  } else {
+    loadDiaryList(true)
+  }
+}
+
+function clearSearch() {
+  searchKeyword.value = ''
+  loadDiaryList(true)
+}
+
+async function searchDiaries() {
+  if (loading.value) return
+  loading.value = true
+  try {
+    const res = await get('/life/diary/search', { keyword: searchKeyword.value.trim() }, { useLoading: false })
+    if (res && res.data) {
+      diaryList.value = res.data
+      noMore.value = true
+    }
+  } catch (e) {
+    console.error('搜索失败', e)
+    uni.showToast({ title: '搜索失败', icon: 'none' })
+  } finally {
+    loading.value = false
+  }
 }
 
 async function loadDiaryList(reset = false) {
@@ -520,6 +574,37 @@ function goCreate() {
 
 .icon-text {
   font-size: 32rpx;
+}
+
+/* Search bar */
+.search-bar {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  padding: 12rpx 30rpx;
+  gap: 12rpx;
+}
+.search-input {
+  flex: 1;
+  height: 64rpx;
+  background: #F5F5F5;
+  border-radius: 32rpx;
+  padding: 0 28rpx;
+  font-size: 26rpx;
+  color: #333;
+}
+.search-clear {
+  width: 48rpx;
+  height: 48rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #eee;
+  border-radius: 50%;
+}
+.clear-text {
+  font-size: 24rpx;
+  color: #999;
 }
 
 /* Mood filter */

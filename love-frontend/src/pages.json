@@ -178,6 +178,12 @@
 			}
 		},
 		{
+			"path": "pages/interact/emotion-stats",
+			"style": {
+				"navigationBarTitleText": "情绪月报"
+			}
+		},
+		{
 			"path": "pages/interact/bill",
 			"style": {
 				"navigationBarTitleText": "情侣账本"

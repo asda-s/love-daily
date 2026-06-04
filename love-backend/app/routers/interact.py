@@ -13,7 +13,7 @@ from typing import Optional, List
 from app.database import get_db
 from app.models import (
     User, CheckinProject, CheckinRecord, Benefit, ExchangeRecord,
-    Emotion, Bill, Greeting, Notification
+    Emotion, Bill, Greeting, Notification, Memory
 )
 from app.schemas import (
     CheckinProjectCreate, CheckinCreate, BenefitCreate, BenefitUpdate,
@@ -175,6 +175,20 @@ async def do_checkin(
     # 成就检测：连续打卡30天 -> "30天早安约定"
     if consecutive >= 30:
         try_achieve(current_user.id, "30天早安约定", db)
+
+    # 同步到时光线
+    try:
+        memory = Memory(
+            user_id=current_user.id,
+            title=f"✅ 打卡：{project.name}",
+            content=f"连续打卡第{consecutive}天" + (f"，获得{bonus}分连续奖励！" if bonus else ""),
+            event_time=datetime.now(),
+            is_sync=True
+        )
+        db.add(memory)
+        db.commit()
+    except Exception:
+        pass
 
     return success_response({
         "id": record.id,
@@ -906,3 +920,71 @@ async def get_today_greetings(
 @router.get("/health")
 async def interact_health():
     return success_response(message="双人互动模块正常")
+
+
+@router.get("/emotion/monthly-stats")
+async def emotion_monthly_stats(
+    year: int = Query(...),
+    month: int = Query(..., ge=1, le=12),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """情绪树洞月度统计"""
+    month_start = date(year, month, 1)
+    if month == 12:
+        month_end = date(year + 1, 1, 1)
+    else:
+        month_end = date(year, month + 1, 1)
+
+    query = db.query(Emotion).filter(
+        Emotion.created_at >= datetime.combine(month_start, datetime.min.time()),
+        Emotion.created_at < datetime.combine(month_end, datetime.min.time())
+    )
+    if current_user.lover_id:
+        query = query.filter(
+            (Emotion.user_id == current_user.id) |
+            ((Emotion.user_id == current_user.lover_id) & (Emotion.is_sync == True))
+        )
+    else:
+        query = query.filter(Emotion.user_id == current_user.id)
+
+    emotions = query.all()
+
+    my_emotions = [e for e in emotions if e.user_id == current_user.id]
+    lover_emotions = [e for e in emotions if e.user_id != current_user.id]
+
+    emotion_labels = {
+        "happy": "开心", "sad": "难过", "angry": "生气",
+        "wronged": "委屈", "anxious": "焦虑"
+    }
+
+    my_dist = {}
+    for e in my_emotions:
+        label = emotion_labels.get(e.emotion_type, e.emotion_type)
+        my_dist[label] = my_dist.get(label, 0) + 1
+
+    lover_dist = {}
+    for e in lover_emotions:
+        label = emotion_labels.get(e.emotion_type, e.emotion_type)
+        lover_dist[label] = lover_dist.get(label, 0) + 1
+
+    # 每日情绪趋势
+    daily = {}
+    for e in emotions:
+        day_key = e.created_at.strftime("%m-%d")
+        if day_key not in daily:
+            daily[day_key] = []
+        daily[day_key].append({
+            "user_id": e.user_id,
+            "emotion_type": e.emotion_type
+        })
+
+    return success_response({
+        "year": year,
+        "month": month,
+        "my_count": len(my_emotions),
+        "lover_count": len(lover_emotions),
+        "my_distribution": my_dist,
+        "lover_distribution": lover_dist,
+        "daily_trend": daily
+    })

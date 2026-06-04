@@ -32,6 +32,7 @@
       </view>
     </scroll-view>
     <view class="fab" @click="goPublish">+</view>
+    <view class="stats-fab" @click="goStats">📊</view>
   </view>
 </template>
 
@@ -80,6 +81,10 @@ const deleteEmotion = async (id) => {
 const goPublish = () => {
   uni.navigateTo({ url: '/pages/interact/emotion-publish' })
 }
+
+const goStats = () => {
+  uni.navigateTo({ url: '/pages/interact/emotion-stats' })
+}
 </script>
 
 <style scoped>
@@ -106,4 +111,5 @@ const goPublish = () => {
 .empty-text { font-size: 30rpx; color: #666; display: block; margin-bottom: 12rpx; }
 .empty-hint { font-size: 24rpx; color: #bbb; display: block; }
 .fab { position: fixed; right: 40rpx; bottom: 140rpx; width: 100rpx; height: 100rpx; background: #FF69B4; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 48rpx; color: #fff; box-shadow: 0 4rpx 16rpx rgba(255,107,157,0.4); }
+.stats-fab { position: fixed; right: 40rpx; bottom: 260rpx; width: 80rpx; height: 80rpx; background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 36rpx; box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.1); }
 </style>

@@ -123,6 +123,11 @@
         <text class="menu-text">解除绑定</text>
         <text class="menu-arrow">></text>
       </view>
+      <view class="menu-item danger" @click="handleDeleteAccount">
+        <text class="menu-icon">🗑️</text>
+        <text class="menu-text">注销账号</text>
+        <text class="menu-arrow">></text>
+      </view>
     </view>
 
     <view class="logout-btn" @click="handleLogout">退出登录</view>
@@ -157,7 +162,7 @@
 import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { useUserStore } from '@/store/user.js'
-import { put, post } from '@/utils/request'
+import { put, post, del } from '@/utils/request'
 import { getToken } from '@/utils/auth'
 import { LEVEL_CONFIG } from '@/utils/constants'
 import { resolveImageUrl } from '@/utils/common'
@@ -333,6 +338,35 @@ function changeAvatar() {
       } catch (e) {
         uni.hideLoading()
         uni.showToast({ title: e.message || '上传失败，请重试', icon: 'none' })
+      }
+    }
+  })
+}
+
+function handleDeleteAccount() {
+  uni.showModal({
+    title: '注销账号',
+    content: '此操作不可撤销！将删除你的所有数据（日记、打卡、账单等），确定注销？',
+    confirmColor: '#e43d33',
+    success: async (res) => {
+      if (res.confirm) {
+        uni.showModal({
+          title: '再次确认',
+          content: '真的要注销吗？所有数据将永久删除！',
+          confirmColor: '#e43d33',
+          success: async (res2) => {
+            if (res2.confirm) {
+              try {
+                await del('/user/account')
+                userStore.logout()
+                uni.reLaunch({ url: '/pages/user/login' })
+                uni.showToast({ title: '账号已注销' })
+              } catch (e) {
+                uni.showToast({ title: '注销失败，请重试', icon: 'none' })
+              }
+            }
+          }
+        })
       }
     }
   })

@@ -253,6 +253,22 @@ def try_unlock_achievement(user_id: int, achievement_name: str, db: Session) -> 
         _check_level_up(user, db)
 
     db.commit()
+
+    # 同步到时光线
+    try:
+        from app.models import Memory
+        memory = Memory(
+            user_id=user_id,
+            title=f"🏆 解锁成就：{achievement.achievement_name}",
+            content=f"{achievement.description}\n\n获得 {achievement.reward_points} 心动分奖励！",
+            event_time=datetime.now(),
+            is_sync=True
+        )
+        db.add(memory)
+        db.commit()
+    except Exception:
+        pass
+
     return True
 
 

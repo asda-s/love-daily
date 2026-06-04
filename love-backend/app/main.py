@@ -193,6 +193,32 @@ async def log_requests(request: Request, call_next):
 
 
 app.include_router(user.router, prefix="/user", tags=["用户模块"])
+
+# 等级福利种子数据
+try:
+    from app.database import SessionLocal
+    from app.models import LevelBenefit
+    db = SessionLocal()
+    existing = db.query(LevelBenefit).count()
+    if existing == 0:
+        seed_data = [
+            LevelBenefit(level=1, benefit_name="初心恋人", description="解锁基础情侣功能"),
+            LevelBenefit(level=2, benefit_name="甜蜜伴侣", description="解锁自定义情侣头像框"),
+            LevelBenefit(level=3, benefit_name="默契搭档", description="解锁情侣专属纪念日皮肤"),
+            LevelBenefit(level=4, benefit_name="浪漫达人", description="解锁高级悄悄话定时功能"),
+            LevelBenefit(level=5, benefit_name="心动守护者", description="解锁情侣空间装扮权限"),
+            LevelBenefit(level=6, benefit_name="灵魂伴侣", description="解锁专属情侣称号"),
+            LevelBenefit(level=7, benefit_name="恋爱大师", description="解锁全部隐藏成就"),
+            LevelBenefit(level=8, benefit_name="永恒之恋", description="解锁情侣时光轴高级模板"),
+            LevelBenefit(level=9, benefit_name="传奇恋人", description="解锁专属情侣勋章"),
+            LevelBenefit(level=10, benefit_name="心动传说", description="永久解锁全部功能"),
+        ]
+        db.add_all(seed_data)
+        db.commit()
+        logger.info("种子数据: 等级福利初始化完成")
+    db.close()
+except Exception as e:
+    logger.warning(f"种子数据初始化跳过: {str(e)}")
 app.include_router(memory.router, prefix="/memory", tags=["时光档案馆模块"])
 app.include_router(life.router, prefix="/life", tags=["生活管家模块"])
 app.include_router(interact.router, prefix="/interact", tags=["双人互动模块"])
