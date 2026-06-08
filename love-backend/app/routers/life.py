@@ -27,6 +27,7 @@ from app.schemas import (
 )
 from app.response import success_response, error_response
 from app.routers.websocket import broadcast_to_user
+from app.wechat_security import check_text_content
 
 
 from app.utils import try_achieve
@@ -585,6 +586,10 @@ async def create_diary(
     创建心情日记
     - 最多9张图片，最多3个标签
     """
+    # 内容安全检测
+    if not await check_text_content(data.content):
+        return error_response(400, "发布内容含有违规信息，请修改后重试")
+
     images_json = json.dumps(data.images) if data.images else None
     tags_json = json.dumps(data.tags) if data.tags else None
     diary = MoodDiary(
@@ -1127,6 +1132,10 @@ async def add_reply(
     """
     添加日记回复
     """
+    # 内容安全检测
+    if not await check_text_content(data.content):
+        return error_response(400, "回复内容含有违规信息，请修改后重试")
+
     diary = db.query(MoodDiary).filter(MoodDiary.id == diary_id).first()
     if not diary:
         return error_response(404, "日记不存在")

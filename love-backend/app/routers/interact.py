@@ -21,6 +21,7 @@ from app.schemas import (
 )
 from app.security import get_current_user, check_couple_permission
 from app.response import success_response, error_response
+from app.wechat_security import check_text_content
 
 
 from app.utils import try_achieve
@@ -501,6 +502,10 @@ async def create_emotion(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    # 内容安全检测
+    if not await check_text_content(data.content):
+        return error_response(400, "发布内容含有违规信息，请修改后重试")
+
     emotion = Emotion(
         user_id=current_user.id,
         emotion_type=data.emotion_type,

@@ -19,6 +19,7 @@ from app.schemas import (
     WhisperCreate
 )
 from app.response import success_response, error_response
+from app.wechat_security import check_text_content
 import json
 
 
@@ -49,6 +50,11 @@ async def create_memory(
     - 需要JWT鉴权
     - 可选择是否同步给情侣
     """
+    # 内容安全检测
+    check_text = memory_data.title + (memory_data.content or "")
+    if not await check_text_content(check_text):
+        return error_response(400, "发布内容含有违规信息，请修改后重试")
+
     new_memory = Memory(
         user_id=current_user.id,
         title=memory_data.title,
@@ -374,6 +380,9 @@ async def create_anniversary(
     创建纪念日
     - 支持个人纪念日和情侣纪念日
     """
+    if not await check_text_content(anniversary_data.title + (anniversary_data.note or "")):
+        return error_response(400, "内容含有违规信息，请修改后重试")
+
     new_anniversary = Anniversary(
         user_id=current_user.id,
         title=anniversary_data.title,
@@ -550,6 +559,9 @@ async def create_wish(
     创建心愿
     - 支持个人心愿和情侣心愿
     """
+    if not await check_text_content(wish_data.content + (wish_data.note or "")):
+        return error_response(400, "内容含有违规信息，请修改后重试")
+
     new_wish = Wish(
         user_id=current_user.id,
         content=wish_data.content,
@@ -725,6 +737,10 @@ async def create_whisper(
     # 定时发送必须提供定时时间
     if whisper_data.is_scheduled and not whisper_data.scheduled_time:
         return error_response(400, "定时发送必须设置发送时间")
+
+    # 内容安全检测
+    if not await check_text_content(whisper_data.content):
+        return error_response(400, "发送内容含有违规信息，请修改后重试")
 
     # 创建悄悄话
     new_whisper = Whisper(
