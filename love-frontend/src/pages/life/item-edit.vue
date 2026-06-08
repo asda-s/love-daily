@@ -170,7 +170,7 @@
 import { ref, reactive, onMounted, onUnmounted, watch } from 'vue'
 import { get, post, put } from '@/utils/request'
 import { getToken } from '@/utils/auth'
-import { resolveImageUrl } from '@/utils/common'
+import { resolveImageUrl, getApiBaseUrl } from '@/utils/common'
 
 // ---- Constants ----
 const MOOD_CONFIG = {
@@ -353,7 +353,7 @@ const uploadImage = async (filePath) => {
     const token = getToken()
     const uploadRes = await new Promise((resolve, reject) => {
       uni.uploadFile({
-        url: (import.meta.env.VITE_API_BASE_URL || '') + '/memory/upload',
+        url: getApiBaseUrl() + '/memory/upload',
         filePath: filePath,
         name: 'file',
         header: {

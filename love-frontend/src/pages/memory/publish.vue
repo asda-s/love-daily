@@ -79,7 +79,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { get, post, put } from '@/utils/request'
-import { formatDate, resolveImageUrl } from '@/utils/common'
+import { formatDate, resolveImageUrl, getApiBaseUrl } from '@/utils/common'
 import { getToken } from '@/utils/auth'
 
 const editId = ref(null)
@@ -137,7 +137,7 @@ function chooseImage() {
         for (const filePath of res.tempFilePaths) {
           const uploadRes = await new Promise((resolve, reject) => {
             uni.uploadFile({
-              url: `${import.meta.env.VITE_API_BASE_URL || ''}/memory/upload`,
+              url: `${getApiBaseUrl()}/memory/upload`,
               filePath: filePath,
               name: 'file',
               header: { Authorization: `Bearer ${token}` },

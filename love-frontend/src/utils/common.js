@@ -140,6 +140,22 @@ export function formatAmount(amount, decimals = 2) {
 export const getLevelInfo = _getLevelInfo
 
 /**
+ * 获取API基础地址（用于上传等需要完整URL的场景）
+ */
+export function getApiBaseUrl() {
+  // #ifdef H5
+  return import.meta.env.VITE_API_BASE_URL || ''
+  // #endif
+  // #ifdef MP-WEIXIN
+  return 'https://love-daily-api.onrender.com'
+  // #endif
+  // #ifdef APP-PLUS
+  return 'https://love-daily-api.onrender.com'
+  // #endif
+  return ''
+}
+
+/**
  * 解析图片URL
  * 兼容 base64 data URL（旧数据）、完整URL、相对路径
  * @param {string} url - 原始图片URL

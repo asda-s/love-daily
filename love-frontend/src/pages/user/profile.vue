@@ -165,7 +165,7 @@ import { useUserStore } from '@/store/user.js'
 import { put, post, del } from '@/utils/request'
 import { getToken } from '@/utils/auth'
 import { LEVEL_CONFIG } from '@/utils/constants'
-import { resolveImageUrl } from '@/utils/common'
+import { resolveImageUrl, getApiBaseUrl } from '@/utils/common'
 
 const userStore = useUserStore()
 const userInfo = ref({})
@@ -300,7 +300,7 @@ function changeAvatar() {
       try {
         const uploadRes = await new Promise((resolve, reject) => {
           uni.uploadFile({
-            url: `${import.meta.env.VITE_API_BASE_URL || ''}/memory/upload?type=avatar`,
+            url: `${getApiBaseUrl()}/memory/upload?type=avatar`,
             filePath: filePath,
             name: 'file',
             header: { Authorization: `Bearer ${token}` },
