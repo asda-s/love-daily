@@ -6,7 +6,7 @@
       </view>
       <view class="user-card">
         <view class="avatar-wrap" @click="changeAvatar">
-          <image class="avatar" :src="resolveImageUrl(userInfo.avatar)" mode="aspectFill" />
+          <image class="avatar" :src="resolveImageUrl(userInfo.avatar)" mode="aspectFill" @error="userInfo.avatar = ''" />
           <view class="avatar-edit">修改头像</view>
         </view>
         <view class="user-meta">

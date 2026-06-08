@@ -31,6 +31,7 @@
             class="avatar"
             :src="resolveImageUrl(item.sender_avatar)"
             mode="aspectFill"
+            @error="item.sender_avatar = ''"
           ></image>
         </view>
 
@@ -50,6 +51,7 @@
             class="avatar"
             :src="resolveImageUrl(userStore.userInfo?.avatar)"
             mode="aspectFill"
+            @error="userStore.userInfo.avatar = ''"
           ></image>
         </view>
       </view>

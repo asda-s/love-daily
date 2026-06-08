@@ -32,15 +32,15 @@
           <text class="bell-icon">🔔</text>
           <view v-if="unreadNotifications > 0" class="bell-badge">{{ unreadNotifications > 9 ? '9+' : unreadNotifications }}</view>
         </view>
-        <image class="header-avatar" :src="resolveImageUrl(userStore.userInfo?.avatar) || '/static/default-avatar.png'" mode="aspectFill" @click="goProfile" />
+        <image class="header-avatar" :src="resolveImageUrl(userStore.userInfo?.avatar) || '/static/default-avatar.png'" mode="aspectFill" @click="goProfile" @error="userStore.userInfo && (userStore.userInfo.avatar = '')" />
       </view>
     </view>
 
     <view class="couple-card" v-if="userStore.isBindLover" @click="goProfile">
       <view class="couple-avatars">
-        <image class="avatar" :src="resolveImageUrl(userStore.userInfo?.avatar) || '/static/default-avatar.png'" mode="aspectFill" />
+        <image class="avatar" :src="resolveImageUrl(userStore.userInfo?.avatar) || '/static/default-avatar.png'" mode="aspectFill" @error="userStore.userInfo && (userStore.userInfo.avatar = '')" />
         <text class="heart-icon">🎀</text>
-        <image class="avatar" :src="resolveImageUrl(userStore.loverInfo?.avatar) || '/static/default-avatar.png'" mode="aspectFill" />
+        <image class="avatar" :src="resolveImageUrl(userStore.loverInfo?.avatar) || '/static/default-avatar.png'" mode="aspectFill" @error="userStore.loverInfo && (userStore.loverInfo.avatar = '')" />
       </view>
       <view class="couple-names">
         <text>{{ userStore.userInfo?.nickname || '我' }}</text>

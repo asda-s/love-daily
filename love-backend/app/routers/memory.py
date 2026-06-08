@@ -329,7 +329,19 @@ async def upload_image(
     img.save(buf, format="JPEG", quality=quality, optimize=True)
     contents = buf.getvalue()
 
-    # 保存到本地文件系统
+    import base64
+
+    # 头像模式：直接返回base64 data URL，避免文件丢失
+    if request.query_params.get("type") == "avatar":
+        b64 = base64.b64encode(contents).decode("utf-8")
+        data_url = f"data:image/jpeg;base64,{b64}"
+        logger.info(f"头像上传(base64): user={current_user.id} size={len(contents)}")
+        return success_response(
+            data={"url": data_url},
+            message="上传成功"
+        )
+
+    # 普通图片：保存到本地文件系统
     import uuid
     from datetime import datetime as dt
     now = dt.now()
